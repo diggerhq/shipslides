@@ -5,11 +5,16 @@ import assert from "node:assert/strict";
 // Set a runtime package directory and browser channel to verify using an
 // existing browser without installing packages; omit them in the agent VM.
 process.env.SHIPSLIDES_OUTPUT_DIR ??= resolve("artifacts");
-const { checkDeck, exportDeck } = await import("../opencomputer/agents/designer/tools/deck.js");
+const { checkDeck, exportDeck, readDeck } = await import("../opencomputer/agents/designer/tools/deck.js");
 const html = await readFile("examples/background-agents.html", "utf8");
 const context = { input: { html, name: "background-agents" }, sessionId: "local", messageId: "local", agentId: "designer", reportProgress: async () => {} };
 const checked = await checkDeck.run(context) as any;
 assert.equal(checked.ok, true, JSON.stringify(checked, null, 2));
+const fresh = await checkDeck.run({ ...context, input: { html, name: "draft-read-check" } }) as any;
+assert.equal(fresh.ok, true);
+const draft = await readDeck.run({ ...context, input: { name: "draft-read-check" } }) as any;
+assert.equal(draft.stage, "draft");
+assert.ok(draft.html.includes("<html"));
 const exported = await exportDeck.run(context) as any;
 assert.equal(exported.ok, true);
 assert.equal(exported.slideCount, 8);

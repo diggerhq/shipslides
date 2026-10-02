@@ -105,7 +105,10 @@ export const checkDeck = defineTool({
   async run({ input, signal, reportProgress }) {
     const name = safeName(input.name);
     const result = await inspect(validateHtml(input.html), join(OUTPUT, name, "draft"), signal, step => void reportProgress({ step }));
-    try { return { ok: result.ok, slideCount: result.count, errors: result.errors, slides: result.slides }; }
+    try {
+      await writeFile(join(OUTPUT, name, "draft", "index.html"), prepareHtml(validateHtml(input.html)));
+      return { ok: result.ok, slideCount: result.count, errors: result.errors, slides: result.slides };
+    }
     finally { result.cleanup(); await result.browser.close(); }
   },
 });
@@ -129,7 +132,14 @@ export const exportDeck = defineTool({
 });
 
 export const readDeck = defineTool({
-  name: "read_deck", description: "Read a previously exported deck's HTML so you can revise the same deck in a follow-up turn.",
+  name: "read_deck", description: "Read an exported deck's HTML, or the latest checked draft when it has not been exported yet, for revision.",
   input: { type: "object", properties: { name: { type: "string" } }, required: ["name"], additionalProperties: false },
-  async run({ input }) { return { html: await readFile(join(OUTPUT, safeName(input.name), "index.html"), "utf8") }; },
+  async run({ input }) {
+    const directory = join(OUTPUT, safeName(input.name));
+    try { return { html: await readFile(join(directory, "index.html"), "utf8"), stage: "exported" }; }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      return { html: await readFile(join(directory, "draft", "index.html"), "utf8"), stage: "draft" };
+    }
+  },
 });
