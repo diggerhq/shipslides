@@ -122,3 +122,5 @@ The prompt website takes inspiration from ShipVideo’s focused input form, sess
 ## Vercel deployment
 
 `vercel.json` serves `web/` and routes `/api/*` to `api/handler.mjs`. Configure `OPENCOMPUTER_API_KEY`, `OC_AGENT_ID`, and `OC_PROJECT_ID` as server-side production environment variables, then deploy with Vercel. The website starts sessions quickly and polls them; rendering continues on OpenComputer independently of Vercel function timeouts. Model tokens and tool computer time are billed to the configured OpenComputer account.
+
+The hosted Vercel site passed browser checks for public submission, embedded deck navigation, workspace PNG previews, five-page PDF download, and mobile sizing. The diagnostic regression test also verifies that generated runtime files are ignored while genuinely misplaced and duplicate source tools still fail.
