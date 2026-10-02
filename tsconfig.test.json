@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "outDir": ".test-build", "rootDir": ".", "module": "NodeNext", "moduleResolution": "NodeNext" },
+  "include": ["opencomputer/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"]
+}

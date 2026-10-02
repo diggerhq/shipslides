@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Work that keeps moving — ShipSlides example</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* === FIXED STAGE === */
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* === EDITORIAL DESIGN SYSTEM === */
+:root{--slide-bg:#f3f0e8;--stage-bg:#151916;--ink:#17231b;--muted:#626c62;--accent:#ed5836;--mint:#d5e7bc}
+*{box-sizing:border-box}body{font-family:'DM Sans',Arial,sans-serif;color:var(--ink)}
+.slide{padding:100px 116px}.slide.dark{background:#17231b;color:#f3f0e8}.slide.mint{background:var(--mint)}
+.eyebrow{font-size:23px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 60px;color:var(--accent)}
+h1,h2,h3,p{margin:0}h1{font-size:146px;font-weight:500;letter-spacing:-.055em;line-height:1.02;max-width:1180px}h2{font-size:96px;font-weight:500;letter-spacing:-.045em;line-height:1.07;max-width:1500px}h3{font-size:42px;font-weight:500;letter-spacing:-.025em;line-height:1.15}
+p{font-size:34px;line-height:1.45;max-width:1160px}.lead{margin-top:48px;color:var(--muted);max-width:1080px}.dark .lead{color:#b4beb4}
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-style:italic}.orange{color:var(--accent)}
+.footer{position:absolute;left:116px;right:116px;bottom:55px;display:flex;justify-content:space-between;border-top:1px solid #17231b30;padding-top:22px;font-size:22px}.dark .footer{border-color:#ffffff30;color:#c5cdc1}
+.split{display:grid;grid-template-columns:1.1fr 1fr;gap:100px;align-items:center;margin-top:74px}.split p{max-width:690px}.stack{display:grid;gap:28px}.line{border-bottom:1px solid #17231b30;padding:24px 0}.line span{display:block;color:var(--muted);font-size:29px;margin-top:12px}
+.diagram{display:flex;align-items:center;gap:22px;margin-top:100px}.node{background:#fff8;border:1px solid #17231b22;padding:42px 34px;flex:1;min-height:240px}.node small{font-size:24px;color:var(--accent);display:block;margin-bottom:27px}.node p{font-size:28px;margin-top:20px}.arrow{font-size:44px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:75px}.card{padding:44px;border-top:3px solid var(--accent);background:#ffffff09;min-height:280px}.card p{font-size:31px;line-height:1.4;margin-top:25px;color:#bdc7bb}.card .number{font-family:'Instrument Serif',Georgia,serif;font-size:104px;line-height:1;color:var(--mint);margin-bottom:30px}
+.quote{font-size:106px;font-family:'Instrument Serif',Georgia,serif;line-height:1.12;letter-spacing:-.02em;max-width:1540px;margin-top:90px}.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:35px;margin-top:100px}.step{border-top:2px solid var(--ink);padding-top:32px}.step b{font-size:25px;color:var(--accent);display:block;margin-bottom:28px}.step p{font-size:29px;margin-top:22px}
+.orb{position:absolute;width:550px;height:550px;border:2px solid #17231b30;border-radius:50%;right:140px;top:220px}.orb:before,.orb:after{content:'';position:absolute;border:2px solid #17231b30;border-radius:50%;inset:70px}.orb:after{inset:140px;background:var(--accent);border:0}.hero h1{position:relative;z-index:2}.hero .lead{max-width:920px}
+.speaker-notes{display:none}.deck-controls{display:flex;gap:9px;align-items:center;background:#fff;color:#17231b;padding:10px;border-radius:14px;box-shadow:0 5px 35px #0004;font:14px 'DM Sans',Arial,sans-serif}
+button{border:0;border-radius:8px;padding:9px 12px;background:#edf0e8;color:#17231b;font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #ed5836}#counter{min-width:50px;text-align:center}.editing [contenteditable=true]{outline:2px dashed #ed5836;outline-offset:5px}
+@media(prefers-reduced-motion:no-preference){.slide.active h1,.slide.active h2{animation:enter .45s ease-out}@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}}
+@media print{.reveal{opacity:1!important;transform:none!important}}
+</style></head><body>
+<main class="deck-viewport"><div class="deck-stage">
+<section class="slide active hero" aria-hidden="false">
+<p class="eyebrow">A field guide to background agents</p><div class="orb" aria-hidden="true"></div>
+<h1 data-edit>Work that<br>keeps <span class="serif orange">moving.</span></h1>
+<p class="lead" data-edit>From a conversation to a computer that carries a task through to a useful result.</p>
+<aside class="speaker-notes">Explain that this is a conceptual introduction, not a performance benchmark. The illustrations describe workflows rather than measured results.</aside>
+<footer class="footer"><span>OpenComputer / Agent fundamentals</span><span>01</span></footer></section>
+<section class="slide" aria-hidden="true"><p class="eyebrow">01 / The shift</p><h2 data-edit>A response is a start.<br>A result is the goal.</h2>
+<div class="split"><p data-edit>A background agent can work through multiple steps while you do something else. You return to an artifact you can inspect.</p><div class="stack"><div class="line"><h3 data-edit>Research the context</h3><span data-edit>Read the sources and identify gaps.</span></div><div class="line"><h3 data-edit>Produce the work</h3><span data-edit>Build, analyze, write or render.</span></div><div class="line"><h3 data-edit>Check the result</h3><span data-edit>Verify against the task's criteria.</span></div></div></div>
+<footer class="footer"><span>From answer to outcome</span><span>02</span></footer></section>
+<section class="slide mint" aria-hidden="true"><p class="eyebrow">02 / The mechanism</p><h2 data-edit>The loop that<br>keeps work moving.</h2>
+<div class="diagram"><div class="node"><small>01</small><h3 data-edit>Reason</h3><p data-edit>Choose the next useful step.</p></div><span class="arrow" aria-hidden="true">→</span><div class="node"><small>02</small><h3 data-edit>Act</h3><p data-edit>Call a tool to do the work.</p></div><span class="arrow" aria-hidden="true">→</span><div class="node"><small>03</small><h3 data-edit>Observe</h3><p data-edit>Read the result and adapt.</p></div><span class="arrow" aria-hidden="true">↺</span></div>
+<footer class="footer"><span>Repeat until the outcome or budget is reached</span><span>03</span></footer></section>
+<section class="slide dark" aria-hidden="true"><p class="eyebrow">03 / Staying power</p><h2 data-edit>Long-running work needs<br>more than a long prompt.</h2>
+<div class="cards"><div class="card"><div class="number">01</div><h3 data-edit>State</h3><p data-edit>Keep decisions and intermediate artifacts across steps.</p></div><div class="card"><div class="number">02</div><h3 data-edit>Recovery</h3><p data-edit>Handle interrupted work and explain what remains.</p></div><div class="card"><div class="number">03</div><h3 data-edit>Boundaries</h3><p data-edit>Use scoped tools and a defined stopping budget.</p></div></div>
+<footer class="footer"><span>Infrastructure makes the workflow practical</span><span>04</span></footer></section>
+<section class="slide" aria-hidden="true"><p class="eyebrow">04 / Capabilities</p><h2 data-edit>Tools turn a model into a worker.</h2>
+<div class="split"><div><p class="serif" style="font-size:64px;line-height:1.15" data-edit>Give the agent the tools its assignment actually needs.</p></div><div class="stack"><div class="line"><h3 data-edit>Browser + sources</h3><span data-edit>Research, screenshots and workflow checks.</span></div><div class="line"><h3 data-edit>Shell + files</h3><span data-edit>Code, datasets and generated artifacts.</span></div><div class="line"><h3 data-edit>Connected services</h3><span data-edit>Scoped access to the user's working systems.</span></div></div></div>
+<footer class="footer"><span>Capabilities should follow the job</span><span>05</span></footer></section>
+<section class="slide mint" aria-hidden="true"><p class="eyebrow">05 / A concrete assignment</p><h2 data-edit>Build a launch kit<br>from a product URL.</h2>
+<div class="timeline"><div class="step"><b>01 / RESEARCH</b><h3 data-edit>Understand</h3><p data-edit>Read the product and its audience.</p></div><div class="step"><b>02 / DESIGN</b><h3 data-edit>Shape</h3><p data-edit>Develop a clear message and visual direction.</p></div><div class="step"><b>03 / BUILD</b><h3 data-edit>Create</h3><p data-edit>Produce slides, a page and a video.</p></div><div class="step"><b>04 / REVIEW</b><h3 data-edit>Verify</h3><p data-edit>Check sources, layouts and working files.</p></div></div>
+<footer class="footer"><span>Illustrative workflow / outputs depend on connected tools</span><span>06</span></footer></section>
+<section class="slide dark" aria-hidden="true"><p class="eyebrow">06 / The quality bar</p><p class="quote" data-edit>“The agent finished”<br>isn't the same as<br><span style="color:var(--mint)">“the work is ready.”</span></p><p class="lead" data-edit>Define success, check the artifact, and surface limitations.</p>
+<footer class="footer"><span>Judge the deliverable, not the activity</span><span>07</span></footer></section>
+<section class="slide hero" aria-hidden="true"><p class="eyebrow">Your next step</p><div class="orb" aria-hidden="true"></div><h1 data-edit>Pick a real job.<br>Make it <span class="serif orange">yours.</span></h1><p class="lead" data-edit>Deploy an agent, give it a clear outcome, and review the work it produces.</p>
+<footer class="footer"><span>opencomputer.dev</span><span>08</span></footer></section>
+</div></main>
+<nav class="deck-controls" aria-label="Presentation controls"><button id="prev" aria-label="Previous slide">←</button><span id="counter" aria-live="polite"></span><button id="next" aria-label="Next slide">→</button><button id="edit">Edit</button><button id="save">Save HTML</button></nav>
+<script>
+/* === VIEWER, NAVIGATION AND INLINE EDITING === */
+const stage=document.querySelector('.deck-stage'),slides=[...document.querySelectorAll('.slide')];let current=0,editing=false;
+function fit(){const scale=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform=`translate(${(innerWidth-1920*scale)/2}px,${(innerHeight-1080*scale)/2}px) scale(${scale})`}
+window.goToSlide=function(index){current=Math.max(0,Math.min(slides.length-1,index));slides.forEach((s,i)=>{s.classList.toggle('active',i===current);s.setAttribute('aria-hidden',String(i!==current))});document.getElementById('counter').textContent=`${current+1} / ${slides.length}`};
+document.getElementById('prev').onclick=()=>goToSlide(current-1);document.getElementById('next').onclick=()=>goToSlide(current+1);
+document.addEventListener('keydown',e=>{if(editing||e.target.closest('button,input,textarea,[contenteditable=true]'))return;if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();goToSlide(current+1)}if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();goToSlide(current-1)}if(e.key==='Home')goToSlide(0);if(e.key==='End')goToSlide(slides.length-1)});
+let touchX=null;document.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX},{passive:true});document.addEventListener('touchend',e=>{if(touchX===null||editing)return;const delta=e.changedTouches[0].clientX-touchX;if(Math.abs(delta)>60)goToSlide(current+(delta<0?1:-1));touchX=null},{passive:true});
+document.getElementById('edit').onclick=()=>{editing=!editing;document.body.classList.toggle('editing',editing);document.querySelectorAll('[data-edit]').forEach(el=>el.setAttribute('contenteditable',String(editing)));document.getElementById('edit').textContent=editing?'Done':'Edit'};
+document.getElementById('save').onclick=()=>{const copy=document.documentElement.cloneNode(true);copy.removeAttribute('data-export');copy.querySelector('body').classList.remove('editing');copy.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));copy.querySelector('#edit').textContent='Edit';const blob=new Blob(['<!doctype html>\n'+copy.outerHTML],{type:'text/html'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='presentation.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+addEventListener('resize',fit);fit();goToSlide(0);
+</script></body></html>

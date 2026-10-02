@@ -1,0 +1,10 @@
+schema = 1
+
+[template]
+name = "ShipSlides"
+description = "Turn a URL or a prompt into a designed slide deck. An OpenComputer serverless agent researches, writes, checks and exports your slides as HTML, PDF and PNG previews."
+default_project_name = "shipslides"
+
+[template.first_run]
+agent = "designer"
+prompt = "Create an 8-slide editorial presentation explaining how background AI agents work, for startup founders. Use a cream, black and vermilion palette, clear diagrams, varied layouts and speaker notes. Export the deck to the session workspace."

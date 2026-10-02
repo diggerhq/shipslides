@@ -1,0 +1,26 @@
+{
+  "name": "shipslides-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "node scripts/compile-test.mjs && node --test .test-build/tests/*.test.js",
+    "validate:template": "node scripts/validate-template.mjs",
+    "deploy": "opencomputer deploy",
+    "preview": "node scripts/preview.mjs",
+    "verify:render": "node scripts/compile-test.mjs && node .test-build/scripts/verify-render.js",
+    "postinstall": "node scripts/patch-cli.mjs"
+  },
+  "dependencies": {
+    "@opencomputer/agent": "0.5.3"
+  },
+  "devDependencies": {
+    "@opencomputer/cli": "0.6.9",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}
