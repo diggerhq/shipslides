@@ -1,3 +1,4 @@
+import { blobQuota, clientIp, hashIp } from '../lib/quota.mjs';
 export const config = { maxDuration: 60 };
 const API = 'https://app.opencomputer.dev';
 async function oc(path,init={}){const r=await fetch(API+'/api/managed-agents/'+path,{...init,headers:{'x-api-key':process.env.OPENCOMPUTER_API_KEY,'content-type':'application/json'},signal:AbortSignal.timeout(45000)});const data=await r.json();if(!r.ok)throw Error(typeof data.error==='string'?data.error:data.error?.message??'OpenComputer request failed');return data;}
@@ -12,9 +13,11 @@ export default async function handler(req,res){
    const data=await input(req);if(typeof data.prompt!=='string'||!data.prompt.trim()||data.prompt.length>12000)throw Error('Enter a brief of up to 12,000 characters');
    const count=Number(data.slides);if(![5,8,12].includes(count))throw Error('Choose 5, 8 or 12 slides');
    const style=['Editorial','Cobalt','Dark'].includes(data.style)?data.style:'Editorial';
-   const {session}=await oc('sessions',{method:'POST',body:JSON.stringify({agentId:process.env.OC_AGENT_ID})});
+   const quota=blobQuota();const reservation=await quota.reserve(hashIp(clientIp(req)));
+   let created;try{created=await oc('sessions',{method:'POST',body:JSON.stringify({agentId:process.env.OC_AGENT_ID})});}catch(e){await quota.release(reservation.id).catch(()=>{});throw e;}
+   const {session}=created;
    await oc(`sessions/${session.id}/turns`,{method:'POST',body:JSON.stringify({input:`Create a ${count}-slide presentation. Style: ${style}. Audience: ${String(data.audience??'General audience').slice(0,150)}. User brief:\n${data.prompt}\nExport HTML, PDF and PNG previews. Work unattended.`,idempotencyKey:crypto.randomUUID()})});
-   return json(res,200,{id:session.id,dashboard:`https://app.opencomputer.dev/projects/${process.env.OC_PROJECT_ID}`});
+   return json(res,200,{id:session.id});
   }
   const m=route.match(/^sessions\/([a-f0-9-]{36})(?:\/(events|files|file))?$/);
   if(m){const [,id,action]=m;const session=await oc(`sessions/${id}`);if(session.projectId!==process.env.OC_PROJECT_ID)return json(res,404,{error:'Session not found'});
@@ -24,5 +27,5 @@ export default async function handler(req,res){
    return json(res,200,session);
   }
   json(res,404,{error:'Not found'});
- }catch(e){json(res,400,{error:e.message});}
+ }catch(e){if(e.retryAfter)res.setHeader('retry-after',String(e.retryAfter));json(res,e.status??400,{error:e.message,...(e.code?{code:e.code}:{}),...(e.retryAt?{retryAt:e.retryAt}:{}),...(e.retryAfter?{retryAfter:e.retryAfter}:{})});}
 }

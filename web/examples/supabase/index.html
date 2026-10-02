@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src data: https://fonts.gstatic.com; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase for Developers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* === THEME === */
+:root{
+  --cobalt:#1E40D8; --cobalt-deep:#0F2A9E; --ink:#0A1435; --muted:#4A5578; --faint:#8A94B4;
+  --paper:#FFFFFF; --mist:#F1F4FD; --line:#CAD4F4; --tint:#E3E9FC;
+  --font:'Schibsted Grotesk',sans-serif; --mono:'JetBrains Mono',monospace;
+  --stage-bg:#0A1435; --slide-bg:#FFFFFF;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* === VIEWPORT BASE (mandatory) === */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff);}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff);}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000;}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff;}
+  .deck-viewport{position:static;overflow:visible;background:#fff;}
+  .deck-stage{position:static;width:auto;height:auto;transform:none !important;background:none;}
+  .slide{position:relative;display:block !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;width:1920px;height:1080px;break-after:page;page-break-after:always;}
+  .slide:last-child{break-after:auto;page-break-after:auto;}
+  .deck-controls{display:none !important;}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.2s !important;}
+}
+
+/* === TYPOGRAPHY & SHARED === */
+body{font-family:var(--font);color:var(--ink);}
+.slide{font-family:var(--font);color:var(--ink);}
+.label{font-size:24px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--cobalt);display:flex;align-items:center;gap:18px;}
+.label::before{content:"";width:44px;height:3px;background:currentColor;display:block;}
+h1,h2{font-weight:500;letter-spacing:-0.035em;line-height:1.0;}
+h2{font-size:92px;}
+.lede{font-size:34px;line-height:1.4;color:var(--muted);}
+.source{position:absolute;left:100px;right:100px;bottom:48px;font-size:20px;color:var(--faint);display:flex;justify-content:space-between;gap:40px;}
+.source a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line);}
+.speaker-notes{display:none;}
+.mono{font-family:var(--mono);}
+
+/* === ANIMATION === */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease),transform .6s var(--ease);}
+.slide.visible .reveal{opacity:1;transform:none;}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}.d4{transition-delay:.32s}.d5{transition-delay:.4s}
+
+/* === SLIDE 1: TITLE === */
+.s-title{background:var(--cobalt);color:#fff;}
+.s-title .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:80px 80px;}
+.s-title .wrap{position:absolute;left:100px;top:120px;width:1060px;}
+.s-title .label{color:#C9D6FF;}
+.s-title h1{font-size:132px;margin-top:56px;}
+.s-title h1 em{font-style:normal;color:#C9D6FF;}
+.s-title .lede{color:#E4EAFF;margin-top:48px;width:940px;}
+.s-title .source{color:#AFC0FA;}
+.s-title .source a{border-color:rgba(255,255,255,.35);}
+.stack{position:absolute;right:120px;top:190px;width:600px;height:700px;}
+
+/* === SLIDE 2: CAPABILITIES HUB === */
+.s-cap .left{position:absolute;left:100px;top:120px;width:700px;}
+.s-cap h2{margin-top:44px;}
+.s-cap .lede{margin-top:40px;}
+.s-cap .pill-row{margin-top:48px;display:flex;flex-direction:column;gap:16px;}
+.s-cap .pill{font-size:28px;color:var(--ink);display:flex;align-items:center;gap:16px;}
+.s-cap .pill i{width:12px;height:12px;border-radius:50%;background:var(--cobalt);display:block;flex:none;}
+.hub{position:absolute;left:860px;top:130px;width:960px;height:780px;}
+.hub svg.lines{position:absolute;inset:0;}
+.hub .core{position:absolute;left:330px;top:240px;width:300px;height:300px;border-radius:50%;background:var(--cobalt);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 0 0 18px var(--tint);}
+.hub .core h3{font-size:46px;font-weight:600;letter-spacing:-0.02em;}
+.hub .core p{font-size:22px;color:#D7E0FF;margin-top:10px;line-height:1.35;}
+.node{position:absolute;width:290px;padding:20px 24px;background:#fff;border:2px solid var(--line);border-radius:18px;}
+.node h4{font-size:30px;font-weight:600;color:var(--cobalt-deep);display:flex;align-items:center;gap:12px;}
+.node h4 svg{width:30px;height:30px;flex:none;}
+.node p{font-size:22px;line-height:1.35;color:var(--muted);margin-top:8px;}
+
+/* === SLIDE 3: EXAMPLE ARCHITECTURE === */
+.s-arch{background:var(--mist);}
+.s-arch .head{position:absolute;left:100px;top:96px;right:100px;display:flex;justify-content:space-between;align-items:flex-end;}
+.s-arch h2{font-size:84px;margin-top:32px;}
+.tag{font-size:22px;font-weight:600;color:var(--cobalt-deep);background:#fff;border:2px dashed var(--cobalt);border-radius:999px;padding:12px 26px;white-space:nowrap;}
+.arch{position:absolute;left:100px;top:360px;width:1720px;height:500px;display:flex;align-items:stretch;}
+.box{background:#fff;border:2px solid var(--line);border-radius:22px;padding:30px;}
+.box .k{font-size:20px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+.box h3{font-size:36px;font-weight:600;margin-top:10px;letter-spacing:-0.02em;}
+.box p{font-size:24px;color:var(--muted);line-height:1.4;margin-top:12px;}
+.client{width:330px;display:flex;flex-direction:column;justify-content:center;}
+.ext{width:250px;display:flex;flex-direction:column;justify-content:center;}
+.wire{width:150px;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;}
+.wire .ln{width:100%;height:3px;background:var(--cobalt);position:relative;}
+.wire .ln::after{content:"";position:absolute;right:-2px;top:-8px;border-left:16px solid var(--cobalt);border-top:9px solid transparent;border-bottom:9px solid transparent;}
+.wire .ln.both::before{content:"";position:absolute;left:-2px;top:-8px;border-right:16px solid var(--cobalt);border-top:9px solid transparent;border-bottom:9px solid transparent;}
+.num{width:44px;height:44px;border-radius:50%;background:var(--cobalt);color:#fff;font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.supa{flex:1;background:#fff;border:3px solid var(--cobalt);border-radius:22px;padding:28px 30px;display:flex;flex-direction:column;gap:18px;}
+.supa .k{color:var(--cobalt);}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.chip{background:var(--mist);border-radius:14px;padding:16px 18px;}
+.chip b{font-size:26px;font-weight:600;display:block;}
+.chip span{font-size:20px;color:var(--muted);display:block;margin-top:4px;}
+.pg{background:var(--cobalt);color:#fff;border-radius:16px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;}
+.pg b{font-size:30px;font-weight:600;}
+.pg span{font-size:22px;color:#D7E0FF;}
+.flow{position:absolute;left:100px;right:100px;top:892px;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;}
+.flow p{font-size:24px;line-height:1.4;color:var(--ink);display:flex;gap:14px;}
+.flow p b{color:var(--cobalt);font-weight:600;flex:none;}
+
+/* === SLIDE 4: PATH TO PRODUCTION === */
+.s-path .head{position:absolute;left:100px;top:110px;width:1500px;}
+.s-path h2{margin-top:40px;}
+.track{position:absolute;left:100px;right:100px;top:440px;}
+.track .rail{position:absolute;left:0;right:0;top:27px;height:3px;background:linear-gradient(90deg,var(--line),var(--cobalt));}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:44px;position:relative;}
+.step .dot{width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid var(--cobalt);color:var(--cobalt);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+.step:last-child .dot{background:var(--cobalt);color:#fff;}
+.step h3{font-size:44px;font-weight:600;letter-spacing:-0.025em;margin-top:34px;}
+.step .cmd{font-family:var(--mono);font-size:20px;background:var(--ink);color:#DCE4FF;border-radius:10px;padding:12px 16px;margin-top:20px;display:inline-block;}
+.step ul{list-style:none;margin-top:24px;display:flex;flex-direction:column;gap:14px;}
+.step li{font-size:26px;line-height:1.35;color:var(--muted);padding-left:22px;position:relative;}
+.step li::before{content:"";position:absolute;left:0;top:14px;width:8px;height:8px;background:var(--cobalt);border-radius:2px;}
+
+/* === SLIDE 5: CLOSING === */
+.s-close{background:var(--ink);color:#fff;}
+.s-close .left{position:absolute;left:100px;top:120px;width:740px;}
+.s-close .label{color:#8FA8FF;}
+.s-close h2{font-size:104px;margin-top:44px;}
+.s-close h2 em{font-style:normal;color:#8FA8FF;}
+.s-close .lede{color:#B9C4E6;margin-top:40px;}
+.s-close .cards{position:absolute;left:960px;right:100px;top:120px;display:flex;flex-direction:column;gap:26px;}
+.card{border:2px solid rgba(143,168,255,.35);border-radius:22px;padding:30px 36px;display:flex;gap:28px;align-items:flex-start;background:rgba(30,64,216,.14);}
+.card svg{width:52px;height:52px;flex:none;margin-top:4px;}
+.card h3{font-size:36px;font-weight:600;letter-spacing:-0.02em;}
+.card p{font-size:25px;line-height:1.4;color:#B9C4E6;margin-top:10px;}
+.s-close .source{color:#7F8BB0;}
+.s-close .source a{border-color:rgba(143,168,255,.35);}
+
+/* === DECK CHROME (outside stage) === */
+.deck-controls{display:flex;align-items:center;gap:10px;background:rgba(10,20,53,.85);padding:8px 10px;border-radius:999px;font-family:'Schibsted Grotesk',sans-serif;}
+.deck-controls button{font:inherit;font-size:14px;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.deck-controls button:hover,.deck-controls button:focus-visible{background:rgba(255,255,255,.12);outline:none;}
+.deck-controls button svg{width:16px;height:16px;}
+.deck-controls .count{color:#C9D6FF;font-size:14px;min-width:52px;text-align:center;}
+.deck-controls button[aria-pressed="true"]{background:#1E40D8;border-color:#1E40D8;}
+body.editing [contenteditable="true"]{outline:2px dashed rgba(30,64,216,.55);outline-offset:4px;}
+</style>
+<style>@page{size:1920px 1080px;margin:0} @media print {
+html,body{width:1920px!important;height:auto!important;overflow:visible!important;margin:0!important}
+.deck-viewport,.deck-stage{position:static!important;transform:none!important;width:1920px!important;height:auto!important;overflow:visible!important}
+.slide{position:relative!important;inset:auto!important;width:1920px!important;height:1080px!important;display:block!important;visibility:visible!important;opacity:1!important;transform:none!important;break-after:page!important;overflow:hidden!important}
+.slide:last-child{break-after:auto!important}.deck-controls,.editing-toolbar{display:none!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
+.reveal{opacity:1!important;transform:none!important}}
+html[data-export] *,html[data-export] *::before,html[data-export] *::after{animation:none!important;transition:none!important}
+html[data-export] .reveal{opacity:1!important;transform:none!important}
+html[data-export] .deck-controls,html[data-export] .editing-toolbar{display:none!important}</style></head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- === SLIDE 1: TITLE === -->
+<section class="slide s-title active visible" data-title="Supabase for developers">
+  <div class="grid-bg"></div>
+  <div class="wrap">
+    <div class="label reveal">A developer introduction</div>
+    <h1 class="reveal d1">Supabase: Postgres, <em>plus the backend</em> around it.</h1>
+    <p class="lede reveal d2">Every project starts with a full Postgres database. Add Auth, Data APIs, Edge Functions, Realtime, Storage and Vector as you need them.</p>
+  </div>
+  <svg class="stack reveal d3" viewBox="0 0 600 700" aria-hidden="true">
+    <g fill="none" stroke="#fff" stroke-width="3">
+      <ellipse cx="300" cy="110" rx="220" ry="70" fill="rgba(255,255,255,.12)"/>
+      <path d="M80 110v130c0 39 98 70 220 70s220-31 220-70V110"/>
+      <path d="M80 240v130c0 39 98 70 220 70s220-31 220-70V240" opacity=".75"/>
+      <path d="M80 370v130c0 39 98 70 220 70s220-31 220-70V370" opacity=".5"/>
+    </g>
+    <g font-family="JetBrains Mono, monospace" font-size="22" fill="#C9D6FF">
+      <text x="300" y="118" text-anchor="middle" fill="#fff" font-size="26">postgres</text>
+      <text x="300" y="290" text-anchor="middle">auth · data apis · storage</text>
+      <text x="300" y="420" text-anchor="middle">realtime · vector</text>
+      <text x="300" y="550" text-anchor="middle">edge functions</text>
+    </g>
+    <g fill="#fff"><circle cx="540" cy="640" r="6"/><circle cx="60" cy="640" r="6" opacity=".5"/></g>
+  </svg>
+  <div class="source"><span>Source: <a href="https://supabase.com">supabase.com</a></span><span>Supabase for developers</span></div>
+  <aside class="speaker-notes">Supabase describes itself as "The Postgres Development Platform." The framing for this talk: it is not a proprietary datastore; each project is a real Postgres database, and the other products are layered around it. Over the next four slides: capabilities, an example architecture, the path to production, and how to evaluate it.</aside>
+</section>
+
+<!-- === SLIDE 2: CORE CAPABILITIES === -->
+<section class="slide s-cap" data-title="Core capabilities">
+  <div class="left">
+    <div class="label reveal">Core capabilities</div>
+    <h2 class="reveal d1">Start with Postgres. Add what you need.</h2>
+    <p class="lede reveal d2">Supabase pitches its products as "use one or all": separate tools that are integrated as one platform.</p>
+    <div class="pill-row reveal d3">
+      <div class="pill"><i></i>Full Postgres, described as 100% portable</div>
+      <div class="pill"><i></i>Row Level Security built into Auth</div>
+      <div class="pill"><i></i>Extensions, Cron and Queues on top</div>
+    </div>
+  </div>
+  <div class="hub reveal d2">
+    <svg class="lines" viewBox="0 0 960 780" aria-hidden="true">
+      <g stroke="#CAD4F4" stroke-width="3" stroke-dasharray="8 8" fill="none">
+        <line x1="480" y1="390" x2="235" y2="105"/><line x1="480" y1="390" x2="725" y2="105"/>
+        <line x1="480" y1="390" x2="145" y2="390"/><line x1="480" y1="390" x2="815" y2="390"/>
+        <line x1="480" y1="390" x2="235" y2="675"/><line x1="480" y1="390" x2="725" y2="675"/>
+      </g>
+    </svg>
+    <div class="core"><h3>Postgres</h3><p>one database<br>per project</p></div>
+    <div class="node" style="left:90px;top:40px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Auth</h4><p>Sign-ups and logins, secured with RLS</p></div>
+    <div class="node" style="left:580px;top:40px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg>Data APIs</h4><p>Instant REST APIs, plus GraphQL</p></div>
+    <div class="node" style="left:0px;top:325px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>Edge Functions</h4><p>Custom code without managing servers</p></div>
+    <div class="node" style="left:670px;top:325px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><path d="M3 7h18v12H3z"/><path d="M3 7l3-3h12l3 3"/></svg>Storage</h4><p>Large files under RLS access policies</p></div>
+    <div class="node" style="left:90px;top:610px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><path d="M4 12h3l3-7 4 14 3-7h3"/></svg>Realtime</h4><p>Database changes and broadcast</p></div>
+    <div class="node" style="left:580px;top:610px"><h4><svg viewBox="0 0 24 24" fill="none" stroke="#1E40D8" stroke-width="2"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="17" cy="17" r="2"/><path d="M7.5 16.5l9-9M8 18h7"/></svg>Vector</h4><p>Store, index and search embeddings</p></div>
+  </div>
+  <div class="source"><span>Sources: <a href="https://supabase.com">supabase.com</a> · <a href="https://supabase.com/docs">supabase.com/docs</a></span><span>02 / 05</span></div>
+  <aside class="speaker-notes">Everything here comes from the Supabase homepage and docs index. The center of gravity is Postgres: the homepage says every project is a full Postgres database, "100% portable", with built-in Auth using Row Level Security. Around it: Auth, auto-generated Data APIs (REST, with GraphQL listed in the docs), Edge Functions for custom server-side code, Storage for large files, Realtime for database changes and broadcast, and Vector for embeddings. The docs also list Cron and Queues as database extensions. The key message: you can adopt one piece or all of them.</aside>
+</section>
+
+<!-- === SLIDE 3: EXAMPLE ARCHITECTURE === -->
+<section class="slide s-arch" data-title="Example architecture">
+  <div class="head">
+    <div>
+      <div class="label reveal">Example architecture</div>
+      <h2 class="reveal d1">Example: an AI-assisted notes app</h2>
+    </div>
+    <div class="tag reveal d2">Illustrative example, not a customer case</div>
+  </div>
+  <div class="arch reveal d2">
+    <div class="box client">
+      <div class="k">Client</div>
+      <h3>Web + mobile</h3>
+      <p>Next.js web app and an Expo app, both using supabase-js</p>
+    </div>
+    <div class="wire"><div class="num">1</div><div class="ln both"></div></div>
+    <div class="supa">
+      <div class="box k" style="border:0;padding:0;background:none">Supabase project</div>
+      <div class="chips">
+        <div class="chip"><b>Auth</b><span>Sign-in and sessions</span></div>
+        <div class="chip"><b>Data API</b><span>Read and write notes</span></div>
+        <div class="chip"><b>Realtime</b><span>Live shared edits</span></div>
+        <div class="chip"><b>Storage</b><span>Attachments</span></div>
+        <div class="chip" style="grid-column:span 2"><b>Edge Functions</b><span>Summaries and embedding jobs</span></div>
+      </div>
+      <div class="pg"><b>Postgres</b><span>notes tables · RLS policies · vector embeddings</span></div>
+    </div>
+    <div class="wire"><div class="num">2</div><div class="ln"></div></div>
+    <div class="box ext">
+      <div class="k">External</div>
+      <h3>Model API</h3>
+      <p>For example OpenAI or Hugging Face</p>
+    </div>
+  </div>
+  <div class="flow reveal d3">
+    <p><b>1</b>The client signs in and queries tables directly; RLS decides which rows each user can see.</p>
+    <p><b>2</b>An Edge Function holds the API key and calls the model, so no extra server is needed.</p>
+    <p><b>3</b>Embeddings are written back to Postgres, then searched with Vector.</p>
+  </div>
+  <div class="source"><span>Example design based on capabilities at <a href="https://supabase.com">supabase.com</a> and <a href="https://supabase.com/docs">supabase.com/docs</a></span><span>03 / 05</span></div>
+  <aside class="speaker-notes">This is an illustrative architecture I put together, not a Supabase reference design or customer story. It uses only capabilities listed on the source pages: supabase-js client, Auth, Data APIs, Realtime, Storage, Edge Functions, and Vector with integrations like OpenAI and Hugging Face mentioned on the homepage. The design point: the browser can talk to the database through the Data API because Row Level Security enforces access per user. Anything secret, like a model API key, lives in an Edge Function. The Next.js and Expo starter templates on the homepage are a sensible starting point.</aside>
+</section>
+
+<!-- === SLIDE 4: PROTOTYPE TO PRODUCTION === -->
+<section class="slide s-path" data-title="Prototype to production">
+  <div class="head">
+    <div class="label reveal">Prototype to production</div>
+    <h2 class="reveal d1">Same Postgres, from laptop to launch.</h2>
+  </div>
+  <div class="track">
+    <div class="rail"></div>
+    <div class="steps">
+      <div class="step reveal d1">
+        <div class="dot">01</div>
+        <h3>Run locally</h3>
+        <div class="cmd">npx supabase init</div>
+        <ul><li>Pin the CLI per project</li><li>Develop against a local stack</li></ul>
+      </div>
+      <div class="step reveal d2">
+        <div class="dot">02</div>
+        <h3>Build</h3>
+        <div class="cmd">@supabase/supabase-js</div>
+        <ul><li>Framework quickstarts and starter templates</li><li>Table editor, SQL editor, RLS policies</li></ul>
+      </div>
+      <div class="step reveal d3">
+        <div class="dot">03</div>
+        <h3>Harden</h3>
+        <div class="cmd">Security Advisor</div>
+        <ul><li>RLS enabled on every table</li><li>SSL, network limits, MFA</li><li>Indexes and load tests</li></ul>
+      </div>
+      <div class="step reveal d4">
+        <div class="dot">04</div>
+        <h3>Ship</h3>
+        <div class="cmd">GitHub integration</div>
+        <ul><li>Deploy migrations from main</li><li>Preview branches for schema changes</li><li>Backups and point-in-time recovery</li></ul>
+      </div>
+    </div>
+  </div>
+  <div class="source"><span>Sources: <a href="https://supabase.com/docs">supabase.com/docs</a> · <a href="https://supabase.com/docs/guides/deployment/going-into-prod">supabase.com/docs/guides/deployment/going-into-prod</a></span><span>04 / 05</span></div>
+  <aside class="speaker-notes">Step one comes from the docs' getting-started flow: install the CLI as a dev dependency so the version is pinned, then run supabase init. Step two: quickstarts exist for React, Next.js, Vue, SvelteKit, Flutter, Swift, Kotlin, Python and more, and the dashboard has Table Editor, SQL Editor and RLS policy tools. Steps three and four summarize Supabase's own Production Checklist: review Security and Performance Advisors, enable RLS on all tables, turn on SSL enforcement and network restrictions, protect accounts with MFA, add indexes and load test on staging. For deployment, connect GitHub so schema changes deploy from main instead of manual db push, and use branching to test migrations. Note that some features, like branching and point-in-time recovery, depend on plan or add-ons; check current pricing yourself rather than relying on this deck.</aside>
+</section>
+
+<!-- === SLIDE 5: CLOSING / EVALUATION === -->
+<section class="slide s-close" data-title="How to evaluate">
+  <div class="left">
+    <div class="label reveal">How to evaluate</div>
+    <h2 class="reveal d1">Judge it as <em>infrastructure</em>, not a shortcut.</h2>
+    <p class="lede reveal d2">Prototype in a weekend, then check the parts that matter for production: portability, control and responsibility.</p>
+  </div>
+  <div class="cards">
+    <div class="card reveal d2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="1.8"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+      <div><h3>It's Postgres underneath</h3><p>A full database per project, with migration guides from Firebase, Neon, RDS and others.</p></div>
+    </div>
+    <div class="card reveal d3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="1.8"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6M14 4l-4 16"/></svg>
+      <div><h3>Open source, self-hostable</h3><p>Built in the open: read, contribute or self-host, so you are not locked in.</p></div>
+    </div>
+    <div class="card reveal d4">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8FA8FF" stroke-width="1.8"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      <div><h3>Shared responsibility</h3><p>The site lists SOC 2 Type 2, HIPAA and ISO 27001. RLS, indexes and load tests remain your job.</p></div>
+    </div>
+  </div>
+  <div class="source"><span>Sources: <a href="https://supabase.com">supabase.com</a> · <a href="https://supabase.com/docs">supabase.com/docs</a> · <a href="https://supabase.com/docs/guides/deployment/going-into-prod">Production checklist</a></span><span>05 / 05</span></div>
+  <aside class="speaker-notes">Close with an evaluation lens. One: portability. Because it's Postgres, the exit path is standard tooling, and the docs offer migration guides from Amazon RDS, Firebase, Neon, Heroku, MySQL and others. Two: open source. The homepage says Supabase is built in the open and can be self-hosted. Three: shared responsibility. The site footer lists SOC 2 Type 2, HIPAA and ISO 27001; the production checklist is explicit that running databases is a shared responsibility. Suggested next step: build a small spike with one starter template, enable RLS from day one, and run the production checklist before deciding. I deliberately left out pricing and usage metrics; check the pricing page directly.</aside>
+</section>
+
+</main>
+</div>
+
+<!-- === CONTROLS (outside stage) === -->
+<nav class="deck-controls" aria-label="Slide controls">
+  <button id="prevBtn" aria-label="Previous slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <span class="count" id="slideCount" aria-live="polite">1 / 5</span>
+  <button id="nextBtn" aria-label="Next slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+  <button id="editBtn" aria-pressed="false" aria-label="Toggle edit mode">Edit</button>
+  <button id="saveBtn" aria-label="Save edited HTML">Save HTML</button>
+</nav>
+
+<script>
+/* === SLIDE PRESENTATION CONTROLLER === */
+(function(){
+  const stage=document.getElementById('deckStage');
+  const slides=[...stage.querySelectorAll('.slide')];
+  const count=document.getElementById('slideCount');
+  let current=0;
+  function scale(){
+    const f=Math.min(window.innerWidth/1920,window.innerHeight/1080);
+    const x=(window.innerWidth-1920*f)/2, y=(window.innerHeight-1080*f)/2;
+    stage.style.transform=`translate(${x}px, ${y}px) scale(${f})`;
+  }
+  function show(i){
+    current=Math.max(0,Math.min(i,slides.length-1));
+    slides.forEach((s,n)=>{s.classList.toggle('active',n===current);s.classList.toggle('visible',n===current);s.setAttribute('aria-hidden',n===current?'false':'true');});
+    count.textContent=(current+1)+' / '+slides.length;
+  }
+  window.goToSlide=show;
+  scale(); window.addEventListener('resize',scale); show(0);
+  document.getElementById('prevBtn').addEventListener('click',()=>show(current-1));
+  document.getElementById('nextBtn').addEventListener('click',()=>show(current+1));
+  document.addEventListener('keydown',e=>{
+    if(e.target.isContentEditable) return;
+    if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(current+1);}
+    if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(current-1);}
+    if(e.key==='Home') show(0);
+    if(e.key==='End') show(slides.length-1);
+  });
+  let tx=null;
+  document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)show(current+(dx<0?1:-1));tx=null;});
+
+  /* === INLINE EDITING === */
+  const editBtn=document.getElementById('editBtn');
+  const sel='.slide h1,.slide h2,.slide h3,.slide h4,.slide p,.slide li,.slide .label,.slide .tag,.slide .cmd,.slide .chip b,.slide .chip span,.slide .pill,.slide .pg b,.slide .pg span';
+  let editing=false;
+  editBtn.addEventListener('click',()=>{
+    editing=!editing;
+    document.body.classList.toggle('editing',editing);
+    editBtn.setAttribute('aria-pressed',String(editing));
+    stage.querySelectorAll(sel).forEach(el=>{if(editing)el.setAttribute('contenteditable','true');else el.removeAttribute('contenteditable');});
+  });
+  document.getElementById('saveBtn').addEventListener('click',()=>{
+    const clone=document.documentElement.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
+    const b=clone.querySelector('body'); b.classList.remove('editing');
+    const eb=clone.querySelector('#editBtn'); if(eb) eb.setAttribute('aria-pressed','false');
+    const st=clone.querySelector('#deckStage'); if(st) st.removeAttribute('style');
+    clone.querySelectorAll('.slide').forEach((s,n)=>{s.classList.toggle('active',n===0);s.classList.toggle('visible',n===0);});
+    const html='<!DOCTYPE html>\n'+clone.outerHTML;
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+    a.download='supabase.html'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  });
+})();
+</script>
+</body>
+</html>

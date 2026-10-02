@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "node scripts/compile-test.mjs && node --test .test-build/tests/*.test.js && node scripts/verify-cli.mjs",
+    "test": "node scripts/compile-test.mjs && node --test .test-build/tests/*.test.js && node scripts/verify-cli.mjs && node --test tests/quota.test.mjs",
     "validate:template": "node scripts/validate-template.mjs",
     "deploy": "opencomputer deploy",
     "preview": "node scripts/preview.mjs",
@@ -14,7 +14,8 @@
     "web": "node scripts/web.mjs"
   },
   "dependencies": {
-    "@opencomputer/agent": "0.5.3"
+    "@opencomputer/agent": "0.5.3",
+    "@vercel/blob": "2.7.0"
   },
   "devDependencies": {
     "@opencomputer/cli": "0.6.9",

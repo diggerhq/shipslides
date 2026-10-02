@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src data: https://fonts.gstatic.com; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare Workers: A Developer Introduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* === THEME TOKENS === */
+:root {
+  --stage-bg: #050a09;
+  --slide-bg: #08100e;
+  --ink: #08100e;
+  --ink-2: #0e1a17;
+  --ink-3: #142420;
+  --line: rgba(140, 240, 200, 0.16);
+  --mint: #6ff2c0;
+  --mint-soft: #b8f8de;
+  --mint-dim: rgba(111, 242, 192, 0.12);
+  --text: #eef6f2;
+  --muted: #9bb0a8;
+  --faint: #5b7068;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Instrument Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* === VIEWPORT BASE (fixed 16:9 stage) === */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+  html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+  .deck-viewport { position: static; overflow: visible; background: #fff; }
+  .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+  .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .deck-controls, .edit-bar { display: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* === SLIDE CHROME === */
+.slide {
+  font-family: var(--font-body);
+  color: var(--text);
+  background:
+    radial-gradient(ellipse 900px 600px at 88% 8%, rgba(111,242,192,0.08), transparent 70%),
+    linear-gradient(rgba(140,240,200,0.035) 1px, transparent 1px) 0 0 / 96px 96px,
+    linear-gradient(90deg, rgba(140,240,200,0.035) 1px, transparent 1px) 0 0 / 96px 96px,
+    var(--ink);
+  transition: opacity 0.5s var(--ease), visibility 0.5s;
+}
+.topbar {
+  position: absolute; left: 96px; right: 96px; top: 64px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.topbar .label { color: var(--mint); display: flex; align-items: center; gap: 16px; }
+.topbar .label::before { content: ""; width: 12px; height: 12px; background: var(--mint); border-radius: 2px; }
+.source {
+  position: absolute; left: 96px; right: 96px; bottom: 56px;
+  font-size: 21px; color: var(--faint); font-family: var(--font-mono);
+  display: flex; justify-content: space-between;
+}
+.source a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
+.content { position: absolute; left: 96px; right: 96px; top: 150px; bottom: 120px; }
+
+h1, h2 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.035em; line-height: 0.98; }
+h1 { font-size: 132px; }
+h2 { font-size: 96px; }
+h1 em, h2 em { font-style: normal; color: var(--mint); }
+.lede { font-size: 36px; line-height: 1.4; color: var(--muted); }
+.mono { font-family: var(--font-mono); }
+
+/* === REVEAL ANIMATION === */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.slide.visible .d1 { transition-delay: 0.08s; }
+.slide.visible .d2 { transition-delay: 0.18s; }
+.slide.visible .d3 { transition-delay: 0.28s; }
+.slide.visible .d4 { transition-delay: 0.38s; }
+
+/* === SLIDE 1: TITLE === */
+.s1 .hero { position: absolute; left: 0; top: 120px; width: 1080px; }
+.s1 .hero h1 { margin-bottom: 52px; }
+.s1 .hero .lede { width: 940px; }
+.s1 .art { position: absolute; right: 0; top: 60px; width: 600px; height: 720px; }
+.s1 .chips { display: flex; gap: 16px; margin-top: 56px; }
+.chip {
+  font-family: var(--font-mono); font-size: 24px; color: var(--mint-soft);
+  border: 1px solid var(--line); background: var(--mint-dim); border-radius: 999px; padding: 10px 24px;
+}
+
+/* === SLIDE 2: WORKFLOW (editorial split + timeline) === */
+.s2 .left { position: absolute; left: 0; top: 40px; width: 700px; }
+.s2 .left h2 { margin-bottom: 40px; }
+.s2 .steps { position: absolute; left: 820px; right: 0; top: 20px; }
+.step { display: grid; grid-template-columns: 96px 1fr; column-gap: 32px; position: relative; padding-bottom: 38px; }
+.step:not(:last-child)::after { content: ""; position: absolute; left: 47px; top: 92px; bottom: 6px; width: 2px; background: linear-gradient(var(--mint), rgba(111,242,192,0.1)); }
+.step .num {
+  width: 96px; height: 96px; border-radius: 22px; border: 2px solid var(--mint);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 32px; color: var(--mint); background: var(--ink-2);
+}
+.step h3 { font-family: var(--font-display); font-weight: 500; font-size: 44px; letter-spacing: -0.02em; margin: 6px 0 8px; }
+.step p { font-size: 30px; line-height: 1.38; color: var(--muted); }
+.step p code { font-family: var(--font-mono); font-size: 27px; color: var(--mint-soft); }
+
+/* === SLIDE 3: REQUEST FLOW === */
+.s3 h2 { font-size: 84px; white-space: nowrap; }
+.s3 .flow { position: absolute; left: 0; top: 130px; width: 1728px; height: 480px; }
+.s3 .notes3 { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
+.s3 .notes3 div { border-top: 2px solid var(--line); padding-top: 20px; }
+.s3 .notes3 b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 34px; color: var(--mint); margin-bottom: 6px; }
+.s3 .notes3 p { font-size: 28px; line-height: 1.35; color: var(--muted); }
+
+/* === SLIDE 4: CAPABILITIES (code + groups) === */
+.s4 h2 { font-size: 88px; margin-bottom: 44px; white-space: nowrap; }
+.s4 .grid4 { display: grid; grid-template-columns: 1040px 1fr; gap: 64px; }
+.code {
+  background: #050b0a; border: 1px solid var(--line); border-radius: 20px; overflow: hidden;
+}
+.code .tab { display: flex; gap: 12px; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 22px; color: var(--muted); }
+.code .tab i { width: 14px; height: 14px; border-radius: 50%; background: var(--ink-3); display: inline-block; }
+.code .tab span { margin-left: 16px; color: var(--mint-soft); }
+.code pre { font-family: var(--font-mono); font-size: 24px; line-height: 1.62; padding: 28px 32px; color: #d6e6df; white-space: pre; }
+.k { color: #7fd7ff; } .s { color: var(--mint); } .f { color: #f3d58a; } .c { color: var(--faint); } .hl { color: var(--mint); background: rgba(111,242,192,0.12); border-radius: 4px; }
+.code .cap { padding: 0 32px 26px; font-size: 26px; color: var(--muted); line-height: 1.4; }
+.groups { display: flex; flex-direction: column; gap: 36px; }
+.group h3 { font-family: var(--font-mono); font-weight: 500; font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mint); margin-bottom: 14px; }
+.group .row { display: flex; flex-wrap: wrap; gap: 12px; }
+.group .row span { font-size: 27px; padding: 10px 20px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); }
+.group p { font-size: 26px; color: var(--muted); margin-top: 12px; line-height: 1.35; }
+
+/* === SLIDE 5: USE CASES + CLOSE === */
+.s5 h2 { font-size: 88px; margin-bottom: 44px; }
+.s5 .cases { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; width: 1110px; }
+.case { background: var(--ink-2); border: 1px solid var(--line); border-radius: 22px; padding: 30px 34px; height: 300px; }
+.case svg { width: 48px; height: 48px; margin-bottom: 14px; }
+.case h3 { font-family: var(--font-display); font-weight: 500; font-size: 38px; letter-spacing: -0.02em; margin-bottom: 10px; }
+.case p { font-size: 26px; line-height: 1.38; color: var(--muted); }
+.s5 .close {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 556px;
+  background: var(--mint); color: var(--ink); border-radius: 28px; padding: 52px 48px;
+  display: flex; flex-direction: column;
+}
+.close .eyebrow { font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 26px; }
+.close h3 { font-family: var(--font-display); font-weight: 500; font-size: 58px; line-height: 1.02; letter-spacing: -0.03em; margin-bottom: 28px; }
+.close p { font-size: 28px; line-height: 1.4; }
+.close .links { margin-top: auto; display: flex; flex-direction: column; gap: 12px; font-family: var(--font-mono); font-size: 22px; }
+.close .links a { color: var(--ink); text-decoration: none; border-bottom: 2px solid rgba(8,16,14,0.3); padding-bottom: 4px; }
+
+/* === SPEAKER NOTES (hidden) === */
+.speaker-notes { display: none; }
+
+/* === CONTROLS (outside stage) === */
+.deck-controls {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+  background: rgba(8,16,14,0.85); border: 1px solid rgba(140,240,200,0.2); border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace; color: #cfe2da; font-size: 14px; backdrop-filter: blur(6px);
+}
+.deck-controls button {
+  background: transparent; color: #cfe2da; border: 1px solid rgba(140,240,200,0.25); border-radius: 999px;
+  height: 34px; min-width: 34px; padding: 0 12px; cursor: pointer; font: inherit; display: inline-flex; align-items: center; justify-content: center;
+}
+.deck-controls button:hover, .deck-controls button:focus-visible { background: rgba(111,242,192,0.15); outline: none; }
+.deck-controls button[aria-pressed="true"] { background: #6ff2c0; color: #08100e; }
+.deck-controls svg { width: 16px; height: 16px; }
+#counter { min-width: 56px; text-align: center; }
+body.editing [contenteditable="true"] { outline: 2px dashed rgba(111,242,192,0.5); outline-offset: 6px; }
+</style>
+<style>@page{size:1920px 1080px;margin:0} @media print {
+html,body{width:1920px!important;height:auto!important;overflow:visible!important;margin:0!important}
+.deck-viewport,.deck-stage{position:static!important;transform:none!important;width:1920px!important;height:auto!important;overflow:visible!important}
+.slide{position:relative!important;inset:auto!important;width:1920px!important;height:1080px!important;display:block!important;visibility:visible!important;opacity:1!important;transform:none!important;break-after:page!important;overflow:hidden!important}
+.slide:last-child{break-after:auto!important}.deck-controls,.editing-toolbar{display:none!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
+.reveal{opacity:1!important;transform:none!important}}
+html[data-export] *,html[data-export] *::before,html[data-export] *::after{animation:none!important;transition:none!important}
+html[data-export] .reveal{opacity:1!important;transform:none!important}
+html[data-export] .deck-controls,html[data-export] .editing-toolbar{display:none!important}</style></head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+<!-- ============ SLIDE 1: TITLE ============ -->
+<section class="slide s1 active visible" data-title="Cloudflare Workers">
+  <div class="topbar"><span class="label">Cloudflare Workers</span><span>A developer introduction</span></div>
+  <div class="content">
+    <div class="hero">
+      <h1 class="reveal d1">Ship code to the <em>network</em>, not to a server.</h1>
+      <p class="lede reveal d2">Serverless functions that run on Cloudflare's global network, scale automatically from zero, and connect to data, storage and AI through bindings.</p>
+      <div class="chips reveal d3"><span class="chip">JavaScript</span><span class="chip">TypeScript</span><span class="chip">Python</span><span class="chip">Rust</span></div>
+    </div>
+    <svg class="art reveal d4" viewBox="0 0 600 720" aria-hidden="true">
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#6ff2c0" stop-opacity="0.35"/><stop offset="1" stop-color="#6ff2c0" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="300" cy="360" r="290" fill="url(#glow)"/>
+      <circle cx="300" cy="360" r="250" fill="none" stroke="rgba(140,240,200,0.25)" stroke-width="2"/>
+      <ellipse cx="300" cy="360" rx="250" ry="90" fill="none" stroke="rgba(140,240,200,0.18)" stroke-width="2"/>
+      <ellipse cx="300" cy="360" rx="250" ry="180" fill="none" stroke="rgba(140,240,200,0.12)" stroke-width="2"/>
+      <ellipse cx="300" cy="360" rx="90" ry="250" fill="none" stroke="rgba(140,240,200,0.18)" stroke-width="2"/>
+      <ellipse cx="300" cy="360" rx="180" ry="250" fill="none" stroke="rgba(140,240,200,0.12)" stroke-width="2"/>
+      <g fill="#6ff2c0">
+        <circle cx="140" cy="250" r="9"/><circle cx="380" cy="190" r="9"/><circle cx="470" cy="330" r="9"/>
+        <circle cx="210" cy="430" r="9"/><circle cx="410" cy="500" r="9"/><circle cx="300" cy="300" r="12"/>
+        <circle cx="120" cy="380" r="6"/><circle cx="520" cy="420" r="6"/><circle cx="300" cy="580" r="6"/><circle cx="250" cy="150" r="6"/>
+      </g>
+      <g stroke="#6ff2c0" stroke-width="2" stroke-opacity="0.5" fill="none">
+        <path d="M300 300 L140 250"/><path d="M300 300 L380 190"/><path d="M300 300 L470 330"/><path d="M300 300 L210 430"/><path d="M300 300 L410 500"/>
+      </g>
+    </svg>
+  </div>
+  <div class="source"><span>Source: <a href="https://workers.cloudflare.com">workers.cloudflare.com</a></span><span>01 / 05</span></div>
+  <aside class="speaker-notes">Frame the deck: Workers is Cloudflare's serverless functions platform. The product page describes Workers as fast, elastic serverless functions that scale automatically from zero, run across Cloudflare's network by default, and support JS, TS, Python and Rust templates. Our goal today: understand the workflow, the deployment model, the capabilities and where it fits. We will deliberately not discuss pricing or performance figures; check the live pricing page if that matters for your evaluation.</aside>
+</section>
+
+<!-- ============ SLIDE 2: DEVELOPER WORKFLOW ============ -->
+<section class="slide s2" data-title="Developer workflow">
+  <div class="topbar"><span class="label">Developer workflow</span><span>02 / 05</span></div>
+  <div class="content">
+    <div class="left">
+      <h2 class="reveal d1">From localhost to <em>global</em>.</h2>
+      <p class="lede reveal d2">The loop stays familiar: write, test locally, ship, and control the rollout. Deploy from the CLI or by merging in Git.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal d1"><div class="num">01</div><div><h3>Start from a template</h3><p>Pick a starter in JavaScript, TypeScript, Python or Rust.</p></div></div>
+      <div class="step reveal d2"><div class="num">02</div><div><h3>Test it locally</h3><p>Run the full app on your machine with <code>workerd</code>, the open-source runtime.</p></div></div>
+      <div class="step reveal d3"><div class="num">03</div><div><h3>Deploy from CLI or Git</h3><p>Push from the terminal, or connect a repository and deploy on merge.</p></div></div>
+      <div class="step reveal d4"><div class="num">04</div><div><h3>Roll out, roll back</h3><p>Ship everywhere at once or to a percentage of users; roll back if errors spike.</p></div></div>
+    </div>
+  </div>
+  <div class="source"><span>Source: <a href="https://workers.cloudflare.com">workers.cloudflare.com</a> &middot; "First-class local development", "Go fast, or slow"</span></div>
+  <aside class="speaker-notes">Walk the loop. Templates exist for JS, TS, Python and Rust. Local development uses workerd, Cloudflare's open-source runtime, so you can test fully before pushing. Deployment can happen from the CLI with your package manager runner, or Workers can connect directly to a Git repository so a merge triggers a deploy. Rollouts can be instant or gradual to a percentage of users, with rollback if errors spike. For evaluators: this maps onto existing CI and review practices rather than replacing them.</aside>
+</section>
+
+<!-- ============ SLIDE 3: REQUEST FLOW ============ -->
+<section class="slide s3" data-title="Deployment model and request flow">
+  <div class="topbar"><span class="label">Deployment model</span><span>03 / 05</span></div>
+  <div class="content">
+    <h2 class="reveal d1">Deploy once. Run <em>everywhere</em>.</h2>
+    <svg class="flow reveal d2" viewBox="0 0 1728 480" width="1728" height="480" role="img" aria-label="Request flow: a user request reaches a Cloudflare location, runs your Worker in a V8 isolate, which calls bindings like D1, KV, R2 and Workers AI, then returns a response.">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#6ff2c0"/></marker>
+        <marker id="arrM" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#9bb0a8"/></marker>
+      </defs>
+      <!-- Node 1: client -->
+      <rect x="0" y="110" width="250" height="200" rx="22" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+      <g transform="translate(97,140)" stroke="#6ff2c0" stroke-width="3" fill="none"><rect x="0" y="0" width="56" height="40" rx="5"/><path d="M18 52 H38 M28 40 V52"/></g>
+      <text x="125" y="240" text-anchor="middle" fill="#eef6f2" font-family="Bricolage Grotesque" font-size="34">User</text>
+      <text x="125" y="276" text-anchor="middle" fill="#9bb0a8" font-family="Instrument Sans" font-size="23">HTTP request</text>
+      <!-- Arrow 1 -->
+      <line x1="262" y1="210" x2="350" y2="210" stroke="#6ff2c0" stroke-width="3" marker-end="url(#arr)"/>
+      <text x="306" y="186" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="22">1</text>
+      <!-- Node 2: Cloudflare location -->
+      <rect x="362" y="90" width="360" height="240" rx="22" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+      <text x="542" y="150" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="20" letter-spacing="2">CLOUDFLARE NETWORK</text>
+      <text x="542" y="206" text-anchor="middle" fill="#eef6f2" font-family="Bricolage Grotesque" font-size="34">Location near user</text>
+      <text x="542" y="250" text-anchor="middle" fill="#9bb0a8" font-family="Instrument Sans" font-size="23">by default, or near your</text>
+      <text x="542" y="282" text-anchor="middle" fill="#9bb0a8" font-family="Instrument Sans" font-size="23">data with Smart Placement</text>
+      <!-- Arrow 2 -->
+      <line x1="734" y1="210" x2="822" y2="210" stroke="#6ff2c0" stroke-width="3" marker-end="url(#arr)"/>
+      <text x="778" y="186" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="22">2</text>
+      <!-- Node 3: Worker isolate -->
+      <rect x="834" y="70" width="420" height="280" rx="22" fill="rgba(111,242,192,0.1)" stroke="#6ff2c0" stroke-width="3"/>
+      <text x="1044" y="132" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="20" letter-spacing="2">V8 ISOLATE</text>
+      <text x="1044" y="192" text-anchor="middle" fill="#eef6f2" font-family="Bricolage Grotesque" font-size="40">Your Worker</text>
+      <rect x="874" y="224" width="340" height="60" rx="12" fill="#050b0a" stroke="rgba(140,240,200,0.25)"/>
+      <text x="1044" y="263" text-anchor="middle" fill="#b8f8de" font-family="JetBrains Mono" font-size="23">fetch(request, env)</text>
+      <!-- Arrow 3 to bindings -->
+      <line x1="1266" y1="210" x2="1354" y2="210" stroke="#6ff2c0" stroke-width="3" marker-end="url(#arr)"/>
+      <text x="1310" y="186" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="22">3</text>
+      <!-- Node 4: bindings -->
+      <text x="1546" y="40" text-anchor="middle" fill="#6ff2c0" font-family="JetBrains Mono" font-size="20" letter-spacing="2">ENV BINDINGS</text>
+      <g font-family="Instrument Sans" font-size="25">
+        <rect x="1366" y="64" width="360" height="66" rx="14" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+        <text x="1394" y="106" fill="#eef6f2">env.DB</text><text x="1700" y="106" text-anchor="end" fill="#9bb0a8">D1 SQL</text>
+        <rect x="1366" y="146" width="360" height="66" rx="14" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+        <text x="1394" y="188" fill="#eef6f2">env.KV</text><text x="1700" y="188" text-anchor="end" fill="#9bb0a8">key-value</text>
+        <rect x="1366" y="228" width="360" height="66" rx="14" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+        <text x="1394" y="270" fill="#eef6f2">env.BUCKET</text><text x="1700" y="270" text-anchor="end" fill="#9bb0a8">R2 objects</text>
+        <rect x="1366" y="310" width="360" height="66" rx="14" fill="#0e1a17" stroke="rgba(140,240,200,0.3)" stroke-width="2"/>
+        <text x="1394" y="352" fill="#eef6f2">env.AI</text><text x="1700" y="352" text-anchor="end" fill="#9bb0a8">Workers AI</text>
+      </g>
+      <!-- Return path -->
+      <path d="M1044 362 V430 H125 V322" fill="none" stroke="#9bb0a8" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#arrM)"/>
+      <rect x="470" y="410" width="340" height="40" rx="8" fill="#08100e"/>
+      <text x="640" y="440" text-anchor="middle" fill="#eef6f2" font-family="JetBrains Mono" font-size="23">4  Response returned</text>
+    </svg>
+    <div class="notes3">
+      <div class="reveal d2"><b>Deploy once</b><p>Code runs across Cloudflare's cities by default. No regions to configure.</p></div>
+      <div class="reveal d3"><b>Isolates, not containers</b><p>Lightweight V8 isolates scale up and down quickly, without process overhead.</p></div>
+      <div class="reveal d4"><b>Scale from zero</b><p>Concurrency follows demand; no pre-provisioning or prewarming.</p></div>
+    </div>
+  </div>
+  <div class="source"><span>Source: <a href="https://workers.cloudflare.com">workers.cloudflare.com</a> &middot; "Isolates vs. Containers", "Near your users, or your data"</span></div>
+  <aside class="speaker-notes">Trace the request: 1) a user's HTTP request arrives at Cloudflare's network. By default the Worker runs in a location near the user; Smart Placement can instead run it near your data to minimize end-to-end latency. 2) Your code runs inside a V8 isolate, which Cloudflare describes as an order of magnitude more lightweight than a container-based process. 3) The fetch handler receives env, where bindings expose D1, KV, R2, Workers AI and more. Binding names such as DB or BUCKET are chosen by you in configuration. 4) The response returns to the user. The page also claims no cold starts and no need for pre-provisioned concurrency. Treat these as vendor claims to validate with your own workload; we are not quoting latency numbers.</aside>
+</section>
+
+<!-- ============ SLIDE 4: CAPABILITIES ============ -->
+<section class="slide s4" data-title="Capabilities through bindings">
+  <div class="topbar"><span class="label">Capabilities</span><span>04 / 05</span></div>
+  <div class="content">
+    <h2 class="reveal d1">Full stack, via <em>bindings</em>.</h2>
+    <div class="grid4">
+      <div class="code reveal d2">
+        <div class="tab"><i></i><i></i><i></i><span>index.ts</span></div>
+<pre><span class="k">export default</span> {
+  <span class="k">async</span> <span class="f">fetch</span>(request, <span class="hl">env</span>) {
+    <span class="k">const</span> stmt = <span class="hl">env.DB</span>.<span class="f">prepare</span>(
+      <span class="s">'SELECT * FROM comments LIMIT 3'</span>);
+    <span class="k">const</span> { results } = <span class="k">await</span> stmt.<span class="f">all</span>();
+
+    <span class="k">return new</span> <span class="f">Response</span>(<span class="f">renderHtml</span>(results), {
+      headers: { <span class="s">'content-type'</span>: <span class="s">'text/html'</span> },
+    });
+  },
+} <span class="k">satisfies</span> ExportedHandler&lt;Env&gt;;</pre>
+        <p class="cap">Query D1 from a Worker. The database arrives as a binding on <span class="mono">env</span>; no connection string in code. Adapted from the product page.</p>
+      </div>
+      <div class="groups">
+        <div class="group reveal d2"><h3>Storage &amp; data</h3><div class="row"><span>D1</span><span>KV</span><span>R2</span><span>Queues</span><span>Hyperdrive</span></div></div>
+        <div class="group reveal d3"><h3>State &amp; orchestration</h3><div class="row"><span>Durable Objects</span><span>Workflows</span><span>Containers</span></div></div>
+        <div class="group reveal d4"><h3>AI</h3><div class="row"><span>Workers AI</span><span>Vectorize</span><span>AI Gateway</span><span>Agents</span></div><p>Also: Browser Rendering, Images and more through the same binding model.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="source"><span>Source: <a href="https://workers.cloudflare.com">workers.cloudflare.com</a> &middot; "Hello World to full-stack", "Powerful primitives"</span></div>
+  <aside class="speaker-notes">The key concept is bindings: resources such as databases, storage, browser rendering and images are attached to your Worker and show up on env. The product page shows three examples: querying D1, persisting a to-do list with KV, and generating an image with a Workers AI model. Around Workers, Cloudflare lists storage (D1, KV, R2, Queues, Hyperdrive), stateful compute and orchestration (Durable Objects, Workflows, Containers) and AI (Workers AI, Vectorize, AI Gateway, Agents). The code is adapted from the D1 example on the page; the renderHtml call is simplified.</aside>
+</section>
+
+<!-- ============ SLIDE 5: USE CASES + CLOSE ============ -->
+<section class="slide s5" data-title="Practical use cases">
+  <div class="topbar"><span class="label">Use cases</span><span>05 / 05</span></div>
+  <div class="content">
+    <h2 class="reveal d1">Where Workers <em>fit</em>.</h2>
+    <div class="cases">
+      <div class="case reveal d1">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#6ff2c0" stroke-width="3" aria-hidden="true"><path d="M16 12 L6 24 L16 36 M32 12 L42 24 L32 36 M27 8 L21 40"/></svg>
+        <h3>Scalable APIs</h3><p>Automatic scaling and global deployment, without load balancers or regional config.</p>
+      </div>
+      <div class="case reveal d2">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#6ff2c0" stroke-width="3" aria-hidden="true"><rect x="5" y="8" width="38" height="30" rx="4"/><path d="M5 16 H43 M18 44 H30"/></svg>
+        <h3>Full-stack web apps</h3><p>React, Vue or Next.js with backend logic, databases and storage alongside.</p>
+      </div>
+      <div class="case reveal d3">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#6ff2c0" stroke-width="3" aria-hidden="true"><path d="M24 5 L40 11 V23 C40 33 33 40 24 43 C15 40 8 33 8 23 V11 Z"/><path d="M17 24 L22 29 L31 19"/></svg>
+        <h3>Edge logic</h3><p>Auth, rate limiting, routing and caching near users, offloading your origin.</p>
+      </div>
+      <div class="case reveal d4">
+        <svg viewBox="0 0 48 48" fill="none" stroke="#6ff2c0" stroke-width="3" aria-hidden="true"><circle cx="24" cy="24" r="18"/><path d="M24 13 V24 L32 29"/></svg>
+        <h3>Background jobs</h3><p>Webhooks, data processing and scheduled tasks with Queues, Workflows and Cron Triggers.</p>
+      </div>
+    </div>
+    <div class="close reveal d3">
+      <div class="eyebrow">Evaluate it</div>
+      <h3>Start with one route.</h3>
+      <p>Move a single API endpoint or edge rule onto a Worker, test it locally, then roll it out to a share of traffic.</p>
+      <div class="links">
+        <a href="https://workers.cloudflare.com">workers.cloudflare.com</a>
+        <a href="https://developers.cloudflare.com/workers/">developers.cloudflare.com/workers</a>
+      </div>
+    </div>
+  </div>
+  <div class="source"><span>Source: <a href="https://workers.cloudflare.com">workers.cloudflare.com</a> &middot; "You can use Workers to"</span></div>
+  <aside class="speaker-notes">The four use cases come straight from the product page: scalable APIs; complete web applications with React, Vue or Next.js; edge functions for auth, rate limiting, routing and caching; and business logic and background jobs using Queues, Workflows and Cron Triggers. Suggested evaluation path: pick one low-risk route, build it from a template, test locally with workerd, deploy via Git, and use gradual rollout. Check current pricing and limits on Cloudflare's site directly; this deck intentionally omits them.</aside>
+</section>
+
+</main>
+</div>
+
+<!-- ============ CONTROLS (outside stage) ============ -->
+<nav class="deck-controls" aria-label="Slide controls">
+  <button id="prevBtn" aria-label="Previous slide"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 L5 8 L10 13"/></svg></button>
+  <span id="counter" aria-live="polite">1 / 5</span>
+  <button id="nextBtn" aria-label="Next slide"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3 L11 8 L6 13"/></svg></button>
+  <button id="editBtn" aria-pressed="false" title="Toggle edit mode (E)">Edit</button>
+  <button id="saveBtn" title="Download edited HTML">Save HTML</button>
+</nav>
+
+<script>
+/* === SLIDE PRESENTATION CONTROLLER === */
+(function () {
+  const stage = document.getElementById('deckStage');
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  let current = 0;
+  let editing = false;
+
+  function scale() {
+    const f = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    const x = (window.innerWidth - 1920 * f) / 2;
+    const y = (window.innerHeight - 1080 * f) / 2;
+    stage.style.transform = 'translate(' + x + 'px,' + y + 'px) scale(' + f + ')';
+  }
+  scale();
+  window.addEventListener('resize', scale);
+
+  function goToSlide(i) {
+    current = Math.max(0, Math.min(i, slides.length - 1));
+    slides.forEach(function (s, n) {
+      s.classList.toggle('active', n === current);
+      s.classList.toggle('visible', n === current);
+      s.setAttribute('aria-hidden', n === current ? 'false' : 'true');
+    });
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+  window.goToSlide = goToSlide;
+  goToSlide(0);
+
+  document.getElementById('prevBtn').addEventListener('click', function () { goToSlide(current - 1); });
+  document.getElementById('nextBtn').addEventListener('click', function () { goToSlide(current + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.isContentEditable) return;
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); goToSlide(current + 1); }
+    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); goToSlide(current - 1); }
+    else if (e.key === 'Home') goToSlide(0);
+    else if (e.key === 'End') goToSlide(slides.length - 1);
+    else if (e.key === 'e' || e.key === 'E') toggleEdit();
+  });
+
+  let tx = null;
+  document.addEventListener('touchstart', function (e) { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    if (tx === null || editing) return;
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) goToSlide(current + (dx < 0 ? 1 : -1));
+    tx = null;
+  });
+
+  /* === INLINE EDITING === */
+  const editSel = '.slide h1, .slide h2, .slide h3, .slide p, .slide .label, .slide .chip, .slide .group .row span, .slide .eyebrow';
+  const editBtn = document.getElementById('editBtn');
+  function toggleEdit() {
+    editing = !editing;
+    document.body.classList.toggle('editing', editing);
+    editBtn.setAttribute('aria-pressed', String(editing));
+    document.querySelectorAll(editSel).forEach(function (el) {
+      if (editing) el.setAttribute('contenteditable', 'true'); else el.removeAttribute('contenteditable');
+    });
+  }
+  editBtn.addEventListener('click', toggleEdit);
+
+  document.getElementById('saveBtn').addEventListener('click', function () {
+    const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); });
+    const b = clone.querySelector('body'); b.classList.remove('editing');
+    const eb = clone.querySelector('#editBtn'); if (eb) eb.setAttribute('aria-pressed', 'false');
+    const st = clone.querySelector('#deckStage'); if (st) st.style.transform = '';
+    clone.querySelectorAll('.slide').forEach(function (s, n) {
+      s.classList.toggle('active', n === 0); s.classList.toggle('visible', n === 0); s.removeAttribute('aria-hidden');
+    });
+    const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    a.download = 'cloudflare-workers.html';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+})();
+</script>
+</body>
+</html>

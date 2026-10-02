@@ -124,3 +124,13 @@ The prompt website takes inspiration from ShipVideo’s focused input form, sess
 `vercel.json` serves `web/` and routes `/api/*` to `api/handler.mjs`. Configure `OPENCOMPUTER_API_KEY`, `OC_AGENT_ID`, and `OC_PROJECT_ID` as server-side production environment variables, then deploy with Vercel. The website starts sessions quickly and polls them; rendering continues on OpenComputer independently of Vercel function timeouts. Model tokens and tool computer time are billed to the configured OpenComputer account.
 
 The hosted Vercel site passed browser checks for public submission, embedded deck navigation, workspace PNG previews, five-page PDF download, and mobile sizing. The diagnostic regression test also verifies that generated runtime files are ignored while genuinely misplaced and duplicate source tools still fail.
+
+## Demo examples and quotas
+
+The homepage includes real five-slide developer-tool decks for OpenComputer, Cloudflare Workers, and Supabase, with HTML viewers, PDF downloads, and reusable example briefs. Gallery assets are checked into `web/examples/`; viewing them does not start a model session or consume generation quota. The public generation screen does not link into the owner's OpenComputer account.
+
+The public Vercel API allows **3 started presentations per IP in a rolling 24-hour window**, and **50 total per UTC calendar day**. Quota is reserved before any OpenComputer session is started. An early session-creation failure releases the reservation; once a session is created, failed or cancelled runs still count. Invalid briefs do not count. Rejections return HTTP 429 with a Retry-After header and reset time.
+
+Counters live in a private Vercel Blob store. Uncached reads plus ETag-conditional writes serialize concurrent admissions across function instances; contention retries without accepting extra jobs. If storage is unavailable, generation returns 503 rather than bypassing the limits. Only salted IP hashes and reservation timestamps are stored, with records older than 24 hours removed on updates. This uses Vercel's overwritten X-Forwarded-For header, not a client-supplied custom IP field.
+
+For another hosted frontend, connect a private Vercel Blob store (providing `BLOB_READ_WRITE_TOKEN`), configure a persistent random `QUOTA_IP_SALT`, and run `scripts/init-quota.mjs` once with that Blob credential before enabling generation. Initialization preserves existing counters. The OpenComputer one-click agent template itself does not need Blob storage or these frontend variables.
