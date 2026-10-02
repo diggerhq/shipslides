@@ -31,7 +31,7 @@ npx opencomputer template deploy https://github.com/diggerhq/shipslides
 
 After linking and deploying your project, run `npm run web` and open http://127.0.0.1:4173. Enter a prompt or public URL, select your audience, slide count and style, and generate a presentation. The site displays progress, embeds the finished deck, shows PNG previews and downloads HTML/PDF files. Credentials stay on the Node server; the browser receives only session data and presentation files. The server reads your existing project binding, so each deployer's UI uses their own agent.
 
-This website is a local preview. The one-click button deploys the agent into OpenComputer, where users can prompt it in the playground. A public deployment of this standalone frontend would need its own hosting and user authentication; the local account proxy must not be exposed publicly.
+The public prompt site is deployed at https://shipslides.vercel.app on the diggerhq Vercel team. Its serverless API functions use server-side OpenComputer credentials to start and monitor the deployed agent. Generation is open to visitors. The one-click button deploys a separate agent into each user’s OpenComputer account.
 
 ## Example requests
 
@@ -118,3 +118,7 @@ CLI 0.6.9 recursively scans its own `.opencomputer/runtime` output during diagno
 A real production URL run generated a five-slide deck from https://opencomputer.dev. HTML, PDF, manifest, and five PNGs were downloaded through the authenticated workspace API; all five previews were reviewed locally. A follow-up `read_deck` call successfully loaded the exported HTML for revision. `deploy --watch` also reached the ready state with zero diagnostics.
 
 The prompt website takes inspiration from ShipVideo’s focused input form, session progress, result viewer, and technical explanation. It includes a real generated deck under `web/examples/`, not only the hand-authored test fixture. Browser checks verified submission to the deployed agent, embedded deck navigation, five workspace previews, five-page PDF download, and the mobile layout.
+
+## Vercel deployment
+
+`vercel.json` serves `web/` and routes `/api/*` to `api/handler.mjs`. Configure `OPENCOMPUTER_API_KEY`, `OC_AGENT_ID`, and `OC_PROJECT_ID` as server-side production environment variables, then deploy with Vercel. The website starts sessions quickly and polls them; rendering continues on OpenComputer independently of Vercel function timeouts. Model tokens and tool computer time are billed to the configured OpenComputer account.

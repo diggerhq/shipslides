@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "web",
+  "buildCommand": "node --check api/handler.mjs",
+  "rewrites": [{ "source": "/api/:route*", "destination": "/api/handler?route=:route*" }],
+  "functions": { "api/handler.mjs": { "maxDuration": 60 } }
+}

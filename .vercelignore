@@ -1,0 +1,8 @@
+.git
+.opencomputer
+opencomputer/agents/*/.opencomputer
+.test-build
+artifacts
+node_modules
+.env*
+tests

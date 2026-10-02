@@ -8,3 +8,5 @@ opencomputer/agents/*/.opencomputer/
 .DS_Store
 .test-build/
 artifacts/
+.vercel
+.env*
