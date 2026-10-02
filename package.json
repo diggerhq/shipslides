@@ -10,7 +10,8 @@
     "deploy": "opencomputer deploy",
     "preview": "node scripts/preview.mjs",
     "verify:render": "node scripts/compile-test.mjs && node .test-build/scripts/verify-render.js",
-    "postinstall": "node scripts/patch-cli.mjs"
+    "postinstall": "node scripts/patch-cli.mjs",
+    "web": "node scripts/web.mjs"
   },
   "dependencies": {
     "@opencomputer/agent": "0.5.3"

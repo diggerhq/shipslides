@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src data: https://fonts.gstatic.com; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenComputer for Founders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Instrument+Sans:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* === THEME === */
+:root{
+  --cream:#f3ecdf; --cream-2:#e9e0cf; --ink:#17140f; --ink-2:#3b352c; --muted:#6f675a;
+  --verm:#e0412a; --verm-soft:#f6d3c8; --line:#cfc4b0;
+  --stage-bg:#17140f; --slide-bg:var(--cream);
+  --serif:'Newsreader',Georgia,serif; --sans:'Instrument Sans',sans-serif; --mono:'Geist Mono',monospace;
+  --ease:cubic-bezier(0.16,1,0.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+
+/* === VIEWPORT BASE (mandatory) === */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-viewport{position:fixed;inset:0;overflow:hidden;background:var(--stage-bg,#000);}
+.deck-stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--slide-bg,#fff);}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;display:block;visibility:hidden;opacity:0;pointer-events:none;background:var(--slide-bg,#fff);}
+.slide.active,.slide.visible{visibility:visible;opacity:1;pointer-events:auto;z-index:1;}
+img,video,canvas,svg{max-width:100%;max-height:100%;}
+.deck-controls{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:1000;}
+@media print{
+  html,body{width:1920px;height:auto;overflow:visible;background:#fff;}
+  .deck-viewport{position:static;overflow:visible;background:#fff;}
+  .deck-stage{position:static;width:auto;height:auto;transform:none !important;background:none;}
+  .slide{position:relative;display:block !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;width:1920px;height:1080px;break-after:page;page-break-after:always;}
+  .slide:last-child{break-after:auto;page-break-after:auto;}
+  .deck-controls{display:none !important;}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.2s !important;}}
+
+/* === SHARED SLIDE CHROME === */
+.slide{font-family:var(--sans);color:var(--ink);transition:opacity .5s ease, visibility .5s;}
+.slide.dark{background:var(--ink);color:var(--cream);}
+.chrome{position:absolute;left:120px;right:120px;top:72px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:22px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.dark .chrome{color:#a39a8a;}
+.chrome .tag{color:var(--verm);}
+.source{position:absolute;left:120px;bottom:64px;font-family:var(--mono);font-size:22px;color:var(--muted);}
+.dark .source{color:#a39a8a;}
+.source a{color:inherit;text-decoration:underline;text-decoration-color:var(--verm);text-underline-offset:5px;}
+.speaker-notes{display:none;}
+h1,h2{font-family:var(--serif);font-weight:400;letter-spacing:-0.025em;line-height:1.0;}
+h2{font-size:104px;}
+em{font-style:italic;color:var(--verm);}
+.mono{font-family:var(--mono);}
+
+/* === REVEAL ANIMATION === */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease);}
+.slide.visible .reveal{opacity:1;transform:none;}
+.d1{transition-delay:.08s}.d2{transition-delay:.18s}.d3{transition-delay:.28s}.d4{transition-delay:.38s}.d5{transition-delay:.48s}
+
+/* === SLIDE 1: TITLE === */
+.s1 .title{position:absolute;left:120px;top:230px;width:1060px;}
+.s1 h1{font-size:132px;}
+.s1 .sub{margin-top:48px;font-size:38px;line-height:1.35;color:var(--ink-2);max-width:900px;}
+.s1 .rule{position:absolute;left:120px;top:190px;width:120px;height:8px;background:var(--verm);}
+.term{position:absolute;right:120px;top:300px;width:560px;background:var(--ink);color:var(--cream);border-radius:18px;padding:40px 44px;font-family:var(--mono);font-size:26px;line-height:1.7;box-shadow:24px 24px 0 var(--verm);}
+.term .dots{display:flex;gap:12px;margin-bottom:26px;}
+.term .dots i{width:16px;height:16px;border-radius:50%;background:#4a4337;display:block;}
+.term .p{color:var(--verm);}
+.term .ok{color:#9fd3b9;}
+.term .dim{color:#8f8676;}
+
+/* === SLIDE 2: PROCESS === */
+.s2 .head{position:absolute;left:120px;top:170px;}
+.s2 .lede{margin-top:28px;font-size:36px;color:var(--ink-2);max-width:1300px;line-height:1.35;}
+.steps{position:absolute;left:120px;right:120px;top:540px;display:grid;grid-template-columns:repeat(3,1fr);gap:56px;}
+.step{border-top:3px solid var(--ink);padding-top:30px;position:relative;}
+.step .n{font-family:var(--mono);font-size:24px;color:var(--verm);letter-spacing:.06em;}
+.step h3{font-family:var(--serif);font-weight:500;font-size:60px;margin:14px 0 18px;letter-spacing:-0.02em;}
+.step p{font-size:32px;line-height:1.35;color:var(--ink-2);}
+.step .code{margin-top:24px;display:inline-block;font-family:var(--mono);font-size:24px;background:var(--cream-2);padding:10px 16px;border-radius:8px;}
+.step:not(:last-child)::after{content:"→";position:absolute;right:-48px;top:0;font-size:40px;color:var(--verm);background:var(--cream);padding:0 6px;line-height:1;transform:translateY(-50%);}
+
+/* === SLIDE 3: MACHINE === */
+.s3 .left{position:absolute;left:120px;top:170px;width:780px;}
+.s3 h2{font-size:96px;}
+.s3 .lede{margin-top:36px;font-size:34px;line-height:1.4;color:#d9d0c0;}
+.caps{position:absolute;right:120px;top:170px;width:820px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.cap{border:1.5px solid #4a4337;border-radius:14px;padding:26px 30px;}
+.cap .k{font-family:var(--mono);font-size:22px;color:#a39a8a;text-transform:uppercase;letter-spacing:.08em;}
+.cap .v{font-family:var(--serif);font-size:44px;margin-top:6px;}
+.timeline{position:absolute;right:120px;top:590px;width:820px;}
+.timeline .k{font-family:var(--mono);font-size:22px;color:#a39a8a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px;}
+.keys{position:absolute;left:120px;top:750px;width:780px;border-left:6px solid var(--verm);padding-left:32px;}
+.keys .k{font-family:var(--mono);font-size:22px;color:var(--verm);text-transform:uppercase;letter-spacing:.08em;}
+.keys p{font-size:32px;line-height:1.4;margin-top:10px;color:var(--cream);}
+
+/* === SLIDE 4: PRICING === */
+.s4 .head{position:absolute;left:120px;top:170px;width:860px;}
+.s4 .lede{margin-top:30px;font-size:34px;line-height:1.4;color:var(--ink-2);}
+.stat{position:absolute;right:120px;top:180px;width:760px;background:var(--verm);color:var(--cream);border-radius:18px;padding:40px 48px;}
+.stat .big{font-family:var(--serif);font-size:96px;line-height:1;letter-spacing:-0.02em;}
+.stat .lbl{font-size:30px;margin-top:14px;line-height:1.35;}
+.stat .lbl b{font-weight:600;}
+.plans{position:absolute;left:120px;right:120px;top:660px;display:grid;grid-template-columns:repeat(4,1fr);gap:28px;}
+.plan{border-top:3px solid var(--ink);padding-top:24px;}
+.plan .nm{font-family:var(--mono);font-size:22px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.plan .pr{font-family:var(--serif);font-size:60px;margin:6px 0 10px;}
+.plan p{font-size:28px;line-height:1.35;color:var(--ink-2);}
+.plan.hl{border-top-color:var(--verm);}
+.plan.hl .nm{color:var(--verm);}
+
+/* === SLIDE 5: CLOSE === */
+.s5 .left{position:absolute;left:120px;top:190px;width:860px;}
+.s5 h2{font-size:120px;}
+.s5 .lede{margin-top:36px;font-size:36px;line-height:1.4;color:#d9d0c0;}
+.cmds{position:absolute;right:120px;top:200px;width:740px;}
+.cmd{display:flex;gap:28px;align-items:baseline;padding:26px 0;border-bottom:1.5px solid #3f392f;}
+.cmd .n{font-family:var(--mono);font-size:24px;color:var(--verm);}
+.cmd .t{font-size:24px;color:#a39a8a;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;}
+.cmd code{display:block;font-family:var(--mono);font-size:30px;color:var(--cream);margin-top:8px;}
+.tmpl{position:absolute;left:120px;top:740px;display:flex;gap:18px;flex-wrap:wrap;width:860px;}
+.tmpl span{font-size:28px;border:1.5px solid #6a6152;border-radius:999px;padding:12px 26px;color:var(--cream);}
+.tmpl .k{border:none;padding:12px 0;color:#a39a8a;font-family:var(--mono);font-size:22px;text-transform:uppercase;letter-spacing:.08em;}
+
+/* === CONTROLS (outside stage) === */
+.deck-controls{display:flex;gap:10px;align-items:center;background:rgba(23,20,15,.88);border:1px solid #3f392f;border-radius:999px;padding:8px 12px;font-family:'Geist Mono',monospace;color:#f3ecdf;font-size:14px;}
+.deck-controls button{background:transparent;color:#f3ecdf;border:1px solid #5a5244;border-radius:999px;padding:6px 14px;font:inherit;cursor:pointer;}
+.deck-controls button:hover,.deck-controls button:focus-visible{border-color:#e0412a;outline:none;}
+.deck-controls button[aria-pressed="true"]{background:#e0412a;border-color:#e0412a;}
+#count{min-width:56px;text-align:center;}
+body.editing [contenteditable="true"]{outline:2px dashed rgba(224,65,42,.6);outline-offset:6px;}
+</style>
+<style>@page{size:1920px 1080px;margin:0} @media print {
+html,body{width:1920px!important;height:auto!important;overflow:visible!important;margin:0!important}
+.deck-viewport,.deck-stage{position:static!important;transform:none!important;width:1920px!important;height:auto!important;overflow:visible!important}
+.slide{position:relative!important;inset:auto!important;width:1920px!important;height:1080px!important;display:block!important;visibility:visible!important;opacity:1!important;transform:none!important;break-after:page!important;overflow:hidden!important}
+.slide:last-child{break-after:auto!important}.deck-controls,.editing-toolbar{display:none!important}
+*,*::before,*::after{animation:none!important;transition:none!important}
+.reveal{opacity:1!important;transform:none!important}}
+html[data-export] *,html[data-export] *::before,html[data-export] *::after{animation:none!important;transition:none!important}
+html[data-export] .reveal{opacity:1!important;transform:none!important}
+html[data-export] .deck-controls,html[data-export] .editing-toolbar{display:none!important}</style></head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage">
+
+<!-- ========== SLIDE 1 ========== -->
+<section class="slide s1 active visible" aria-label="Title">
+  <div class="chrome"><span>OpenComputer</span><span class="tag">For startup founders</span></div>
+  <div class="rule reveal d1"></div>
+  <div class="title">
+    <h1 class="reveal d1">Ship long-running agents. <em>Skip the runtime.</em></h1>
+    <p class="sub reveal d2">Define an agent like a serverless function. Choose your model. OpenComputer handles the rest.</p>
+  </div>
+  <div class="term reveal d3" aria-label="Deploy example">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <div><span class="p">$</span> opencomputer deploy</div>
+    <div class="ok">✓ Deployed flag-cleaner@production</div>
+    <div class="dim">model: "anthropic/claude-sonnet-4.6"</div>
+    <div class="dim">ANTHROPIC_API_KEY not present</div>
+  </div>
+  <div class="source">Source: <a href="https://opencomputer.dev">opencomputer.dev</a></div>
+  <aside class="speaker-notes">Open with the founder pain: getting an agent to work in a demo is easy; keeping it running reliably — sessions, streaming, machines, secrets — is an infrastructure project. OpenComputer positions itself as "the platform for long-running agents": you write the agent as a TypeScript function and deploy with one command. The terminal on the right is the example from their homepage — a flag-cleaner agent that finds stale feature flags and opens cleanup PRs.</aside>
+</section>
+
+<!-- ========== SLIDE 2 ========== -->
+<section class="slide s2" aria-label="How it works">
+  <div class="chrome"><span>How it works</span><span>02 / 05</span></div>
+  <div class="head">
+    <h2 class="reveal d1">Three steps. <em>One function.</em></h2>
+    <p class="lede reveal d2">You write the agent. They run the loop, the sessions, the streaming and the versions.</p>
+  </div>
+  <div class="steps">
+    <div class="step reveal d2"><div class="n">01</div><h3>Define it</h3><p>A TypeScript function with your model and tools.</p><span class="code">useModel · useTool · useMcpServer</span></div>
+    <div class="step reveal d3"><div class="n">02</div><h3>Deploy it</h3><p>One command. A real computer for every session.</p><span class="code">$ opencomputer deploy</span></div>
+    <div class="step reveal d4"><div class="n">03</div><h3>Let it work</h3><p>Long-running tasks, managed sessions and schedules.</p><span class="code">cron: "0 9 * * 1-5"</span></div>
+  </div>
+  <div class="source">Source: <a href="https://opencomputer.dev">opencomputer.dev</a> — “How it works”</div>
+  <aside class="speaker-notes">The core idea for founders: the agent is just code you already know how to write. Step one uses hooks like useModel, useTool and useMcpServer from the @opencomputer/agent package. Step two is a single deploy command. Step three is where most teams sink time — keeping things running. Schedules are defined in code with cron syntax; the homepage example runs weekdays at 9am.</aside>
+</section>
+
+<!-- ========== SLIDE 3 ========== -->
+<section class="slide s3 dark" aria-label="A computer per session">
+  <div class="chrome"><span>The runtime</span><span>03 / 05</span></div>
+  <div class="left">
+    <h2 class="reveal d1">Every session gets a <em>real Linux machine.</em></h2>
+    <p class="lede reveal d2">Your tools and MCP servers run on it: clone a repo, run ffmpeg, drive a headless browser, install anything.</p>
+  </div>
+  <div class="keys reveal d3">
+    <div class="k">Keys it uses but never sees</div>
+    <p>Each secret is bound to one origin and injected after the request leaves the machine.</p>
+  </div>
+  <div class="caps">
+    <div class="cap reveal d2"><div class="k">shell</div><div class="v">bash · sh</div></div>
+    <div class="cap reveal d2"><div class="k">filesystem</div><div class="v">read-write</div></div>
+    <div class="cap reveal d3"><div class="k">packages</div><div class="v">apt · npm · pip</div></div>
+    <div class="cap reveal d3"><div class="k">network</div><div class="v">full egress</div></div>
+  </div>
+  <div class="timeline reveal d4">
+    <div class="k">Durable sessions — example timeline</div>
+    <svg viewBox="0 0 820 200" width="820" height="200" role="img" aria-label="Session streams at 09:14, hibernates when idle, resumes at 13:02">
+      <line x1="20" y1="70" x2="300" y2="70" stroke="#e0412a" stroke-width="8" stroke-linecap="round"/>
+      <line x1="300" y1="70" x2="560" y2="70" stroke="#6a6152" stroke-width="4" stroke-dasharray="4 14" stroke-linecap="round"/>
+      <line x1="560" y1="70" x2="800" y2="70" stroke="#e0412a" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="20" cy="70" r="14" fill="#e0412a"/>
+      <circle cx="430" cy="70" r="14" fill="#17140f" stroke="#a39a8a" stroke-width="4"/>
+      <circle cx="560" cy="70" r="14" fill="#e0412a"/>
+      <text x="0" y="30" fill="#a39a8a" font-family="Geist Mono" font-size="22">09:14</text>
+      <text x="0" y="130" fill="#f3ecdf" font-family="Instrument Sans" font-size="30">streaming</text>
+      <text x="370" y="130" fill="#f3ecdf" font-family="Instrument Sans" font-size="30">hibernated</text>
+      <text x="530" y="30" fill="#a39a8a" font-family="Geist Mono" font-size="22">13:02</text>
+      <text x="580" y="130" fill="#f3ecdf" font-family="Instrument Sans" font-size="30">resumed</text>
+      <text x="0" y="185" fill="#a39a8a" font-family="Instrument Sans" font-size="24">Stream, steer mid-run, hibernate when idle, resume where it left off.</text>
+    </svg>
+  </div>
+  <div class="source">Source: <a href="https://opencomputer.dev">opencomputer.dev</a> — “How it works”, “Batteries included”</div>
+  <aside class="speaker-notes">This is the differentiator: not a sandboxed function call but a full Linux machine per session — shell, read-write filesystem, apt/npm/pip, full network egress. Sessions are durable: they stream, can be steered mid-run, hibernate when idle and resume. On security, model keys are not in the runtime, and connection secrets are bound to a single origin and injected after requests leave the machine — so the agent can open a GitHub PR but cannot read or exfiltrate the token. That's a strong answer for enterprise buyers asking about agent security.</aside>
+</section>
+
+<!-- ========== SLIDE 4 ========== -->
+<section class="slide s4" aria-label="Pricing">
+  <div class="chrome"><span>Economics</span><span>04 / 05</span></div>
+  <div class="head">
+    <h2 class="reveal d1">Pay only for <em>what runs.</em></h2>
+    <p class="lede reveal d2">Model tokens at API rates, no markup. Machine time billed per second.</p>
+  </div>
+  <div class="stat reveal d3">
+    <div class="big">≈ $1 / month</div>
+    <div class="lbl">for a session that runs ten minutes a day, on the default <b>2 GB / 1 vCPU</b> machine at <b>$0.00315/min</b>.</div>
+  </div>
+  <div class="plans">
+    <div class="plan reveal d2"><div class="nm">PAYG</div><div class="pr">Usage</div><p>$10 free credit to start. Scales to zero when idle.</p></div>
+    <div class="plan hl reveal d3"><div class="nm">Pro</div><div class="pr">$20/mo</div><p>10× prepaid usage credit. Bring your Codex subscription.</p></div>
+    <div class="plan reveal d4"><div class="nm">Max</div><div class="pr">$200/mo</div><p>10× credit at scale: 10+ default machines around the clock.</p></div>
+    <div class="plan reveal d5"><div class="nm">Enterprise</div><div class="pr">Custom</div><p>Your own cloud or VPC, SSO, audit log.</p></div>
+  </div>
+  <div class="source">Source: <a href="https://opencomputer.dev/#pricing">opencomputer.dev — Pricing</a> (rates as listed Oct 2026)</div>
+  <aside class="speaker-notes">For an early-stage budget this matters: there's no monthly commitment on pay-as-you-go, and you start with $10 of free credit. Tokens pass through at API rates with no markup — and if you bring your own key or a Codex subscription, the token meter reads zero. Machines default to 2 GB / 1 vCPU at $0.00315 per minute and burst automatically to 4 GB or 8 GB when needed. The site's own example: a session running ten minutes a day costs about $1 a month. Plans are simply prepaid credit with a 10× multiplier; when it runs out you continue on PAYG rates. Verify current pricing on the site before quoting it to investors or customers.</aside>
+</section>
+
+<!-- ========== SLIDE 5 ========== -->
+<section class="slide s5 dark" aria-label="Get started">
+  <div class="chrome"><span>Next step</span><span>05 / 05</span></div>
+  <div class="left">
+    <h2 class="reveal d1">Get your first agent running <em>today.</em></h2>
+    <p class="lede reveal d2">Deploy in minutes. No infrastructure to manage. Start free.</p>
+  </div>
+  <div class="tmpl reveal d3">
+    <span class="k">Start from a template</span>
+    <span>Your first agent</span><span>Workbench</span><span>GTM engineer</span>
+  </div>
+  <div class="cmds">
+    <div class="cmd reveal d2"><span class="n">01</span><div><div class="t">Install the CLI</div><code>npm i -g @opencomputer/cli</code></div></div>
+    <div class="cmd reveal d3"><span class="n">02</span><div><div class="t">Sign in</div><code>opencomputer login</code></div></div>
+    <div class="cmd reveal d4"><span class="n">03</span><div><div class="t">Describe &amp; deploy</div><code>opencomputer deploy</code></div></div>
+  </div>
+  <div class="source">Sources: <a href="https://opencomputer.dev">opencomputer.dev</a> · <a href="https://opencomputer.dev/#pricing">opencomputer.dev/#pricing</a></div>
+  <aside class="speaker-notes">Close with a concrete action. Three steps: install the CLI, log in, then ask your coding agent (Claude Code, Codex, OpenCode and others) to create and deploy your first agent — the project appears in the dashboard after its first deploy. Templates to start from: a minimal TypeScript agent; Workbench, a coding agent that edits a repo, runs checks and opens a draft PR; and a GTM engineer that researches prospects and drafts with public evidence. Suggest founders pick one internal chore this week and ship it as an agent.</aside>
+</section>
+
+</main>
+</div>
+
+<!-- ========== CONTROLS (outside stage) ========== -->
+<nav class="deck-controls" aria-label="Slide controls">
+  <button id="prevBtn" aria-label="Previous slide">←</button>
+  <span id="count" aria-live="polite">1 / 5</span>
+  <button id="nextBtn" aria-label="Next slide">→</button>
+  <button id="editBtn" aria-pressed="false" aria-label="Toggle edit mode">Edit</button>
+  <button id="saveBtn" aria-label="Save edited HTML">Save HTML</button>
+</nav>
+
+<script>
+/* === SLIDE PRESENTATION CONTROLLER === */
+(function(){
+  const slides = Array.from(document.querySelectorAll('.deck-stage .slide'));
+  const stage = document.getElementById('deckStage');
+  const count = document.getElementById('count');
+  let current = 0;
+
+  function scale(){
+    const f = Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    const x = (window.innerWidth - 1920*f)/2, y = (window.innerHeight - 1080*f)/2;
+    stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+  }
+  function show(i){
+    current = Math.max(0, Math.min(i, slides.length-1));
+    slides.forEach((s,n)=>{ s.classList.toggle('active', n===current); s.classList.toggle('visible', n===current); s.setAttribute('aria-hidden', n===current?'false':'true'); });
+    count.textContent = (current+1) + ' / ' + slides.length;
+  }
+  window.goToSlide = show;
+  scale(); window.addEventListener('resize', scale);
+  show(0);
+
+  const editing = () => document.body.classList.contains('editing');
+  document.getElementById('prevBtn').addEventListener('click', ()=>show(current-1));
+  document.getElementById('nextBtn').addEventListener('click', ()=>show(current+1));
+  document.addEventListener('keydown', e=>{
+    if (editing() && e.target.isContentEditable) return;
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { e.preventDefault(); show(current+1); }
+    else if (['ArrowLeft','PageUp'].includes(e.key)) { e.preventDefault(); show(current-1); }
+    else if (e.key==='Home') show(0);
+    else if (e.key==='End') show(slides.length-1);
+  });
+  let tx=null;
+  document.addEventListener('touchstart', e=>{ tx = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', e=>{
+    if (tx===null) return; const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) show(current + (dx<0?1:-1)); tx=null;
+  });
+
+  /* === INLINE EDITING === */
+  const editBtn = document.getElementById('editBtn');
+  const editableSel = '.slide h1, .slide h2, .slide h3, .slide p, .slide .k, .slide .t, .slide .nm, .slide .pr, .slide .big, .slide .lbl, .slide .v, .slide .tmpl span, .slide .chrome span';
+  editBtn.addEventListener('click', ()=>{
+    const on = !editing();
+    document.body.classList.toggle('editing', on);
+    editBtn.setAttribute('aria-pressed', String(on));
+    document.querySelectorAll(editableSel).forEach(el=>{ if(on) el.setAttribute('contenteditable','true'); else el.removeAttribute('contenteditable'); });
+  });
+  document.getElementById('saveBtn').addEventListener('click', ()=>{
+    const doc = document.documentElement.cloneNode(true);
+    doc.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
+    const body = doc.querySelector('body'); body.classList.remove('editing');
+    const eb = doc.querySelector('#editBtn'); if (eb) eb.setAttribute('aria-pressed','false');
+    const st = doc.querySelector('#deckStage'); if (st) st.removeAttribute('style');
+    doc.querySelectorAll('.slide').forEach((s,i)=>{ s.classList.toggle('active', i===0); s.classList.toggle('visible', i===0); s.removeAttribute('aria-hidden'); });
+    const html = '<!DOCTYPE html>\n' + doc.outerHTML;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+    a.download = 'opencomputer-founders.html';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+})();
+</script>
+</body>
+</html>

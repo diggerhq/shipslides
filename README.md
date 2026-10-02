@@ -2,7 +2,7 @@
 
 A one-click-deployable **OpenComputer serverless agent** that turns a public URL or a prompt into a designed presentation. Inspired by [ShipVideo](https://github.com/diggerhq/shipvideo), with two bundled skills from skills.sh.
 
-The agent researches the subject, builds a complete browser presentation, inspects every slide, and exports files into the OpenComputer session workspace. Users deploy their own copy, run it with their own OpenComputer billing, and can change the model, instructions and skills.
+The agent researches the subject, builds a complete browser presentation, checks every slide, and exports files into the OpenComputer session workspace. Users deploy their own copy, run it with their own OpenComputer billing, and can change the model, instructions and skills.
 
 ## Outputs
 
@@ -17,15 +17,21 @@ This is an HTML/PDF slide agent, not a clone of Gamma's entire editor. There is 
 
 ## One-click deployment
 
-[Deploy ShipSlides](https://app.opencomputer.dev/new?repository-url=https%3A%2F%2Fgithub.com%2FUtpalJayNadiger%2Fshipslides)
+[Deploy ShipSlides](https://app.opencomputer.dev/new?repository-url=https%3A%2F%2Fgithub.com%2Fdiggerhq%2Fshipslides)
 
-[Public template repository](https://github.com/UtpalJayNadiger/shipslides). The button imports the template into your own OpenComputer account. No extra secrets are required.
+[Public template repository](https://github.com/diggerhq/shipslides). The button imports the template into your own OpenComputer account. No extra secrets are required.
 
 ```sh
-npx opencomputer template deploy https://github.com/UtpalJayNadiger/shipslides
+npx opencomputer template deploy https://github.com/diggerhq/shipslides
 ```
 
 `oc-template.toml` supplies metadata and the first-run brief. Production was deployed on October 2, 2026 using the existing linked project.
+
+## Prompt website
+
+After linking and deploying your project, run `npm run web` and open http://127.0.0.1:4173. Enter a prompt or public URL, select your audience, slide count and style, and generate a presentation. The site displays progress, embeds the finished deck, shows PNG previews and downloads HTML/PDF files. Credentials stay on the Node server; the browser receives only session data and presentation files. The server reads your existing project binding, so each deployer's UI uses their own agent.
+
+This website is a local preview. The one-click button deploys the agent into OpenComputer, where users can prompt it in the playground. A public deployment of this standalone frontend would need its own hosting and user authentication; the local account proxy must not be exposed publicly.
 
 ## Example requests
 
@@ -69,7 +75,7 @@ Open the dashboard URL from the CLI and start a playground session with the `des
 npm run deploy -- --alias production
 ```
 
-Customize `opencomputer/agents/designer/agent.ts` or replace the bundled skills. The tools live alongside the agent: `web_fetch`, `check_deck`, `export_deck` and `read_deck`. There is no separately hosted generation backend. An optional public demo frontend can create agent sessions and sign workspace file downloads, as ShipVideo does; it is not part of this template.
+Customize `opencomputer/agents/designer/agent.ts` or replace the bundled skills. The tools live alongside the agent: `web_fetch`, `check_deck`, `export_deck` and `read_deck`. There is no separately hosted generation backend. A working local prompt frontend is included under `web/`. Its Node server uses your existing CLI login to create sessions and retrieve signed workspace downloads.
 
 ## Local checks and example
 
@@ -99,7 +105,7 @@ The verification checks an eight-slide export, PDF page count, mobile aspect rat
 
 ## Execution boundaries
 
-Source fetching uses validated, pinned public IP addresses with checks on every redirect, response-size limits and timeouts. Chromium allows network requests only for Google Fonts; presentation scripts are inline, network connections/forms are blocked by CSP, and generated decks cannot embed other documents. Layout checks catch canvas/text clipping and JavaScript errors; they do not establish factual accuracy or catch every visual overlap, so the agent is instructed to inspect PNG previews as well.
+Source fetching uses validated, pinned public IP addresses with checks on every redirect, response-size limits and timeouts. Chromium allows network requests only for Google Fonts; presentation scripts are inline, network connections/forms are blocked by CSP, and generated decks cannot embed other documents. Layout checks catch canvas/text clipping and JavaScript errors; they do not establish factual accuracy or catch every visual overlap. OpenComputer’s built-in `read` tool is scoped to packaged skill files, so the model cannot visually inspect generated PNGs. Review the exported previews before presenting. The agent reviews extracted slide text and CSS and does not claim visual inspection.
 
 This agent runs in each deploying user's account. A public free demo would additionally need email verification or authentication, shared rate limits, per-job budgets and a global spending ceiling. Those controls are not implied by the template's rendering checks.
 
@@ -108,3 +114,7 @@ This agent runs in each deploying user's account. A public free demo would addit
 Compilation, unit tests, template packaging, and local Chromium rendering passed on October 2, 2026. Browser verification covered eight PDF pages, PNG previews, mobile 16:9 sizing, keyboard navigation, inline editing, and rejection of text outside the slide canvas.
 
 CLI 0.6.9 recursively scans its own `.opencomputer/runtime` output during diagnostics. The checked-in postinstall patch excludes generated directories from that scan; source diagnostics remain enabled. It fails explicitly if the upstream scanner changes. Template validation builds in a temporary copy and cleans it afterward. Login and project bindings are preserved and excluded from the published template.
+
+A real production URL run generated a five-slide deck from https://opencomputer.dev. HTML, PDF, manifest, and five PNGs were downloaded through the authenticated workspace API; all five previews were reviewed locally. A follow-up `read_deck` call successfully loaded the exported HTML for revision. `deploy --watch` also reached the ready state with zero diagnostics.
+
+The prompt website takes inspiration from ShipVideo’s focused input form, session progress, result viewer, and technical explanation. It includes a real generated deck under `web/examples/`, not only the hand-authored test fixture. Browser checks verified submission to the deployed agent, embedded deck navigation, five workspace previews, five-page PDF download, and the mobile layout.
