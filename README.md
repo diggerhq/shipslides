@@ -31,7 +31,7 @@ npx opencomputer template deploy https://github.com/diggerhq/shipslides
 
 After linking and deploying your project, run `npm run web` and open http://127.0.0.1:4173. Enter a prompt or public URL, select your audience, slide count and style, and generate a presentation. The site displays progress, embeds the finished deck, shows PNG previews and downloads HTML/PDF files. Credentials stay on the Node server; the browser receives only session data and presentation files. The server reads your existing project binding, so each deployer's UI uses their own agent.
 
-The public prompt site is deployed at https://shipslides.vercel.app on the diggerhq Vercel team. Its serverless API functions use server-side OpenComputer credentials to start and monitor the deployed agent. Generation is open to visitors. The one-click button deploys a separate agent into each user’s OpenComputer account.
+The public prompt site is deployed at https://shipslides.dev on the diggerhq Vercel team (also available at https://shipslides.vercel.app). Its serverless API functions use server-side OpenComputer credentials to start and monitor the deployed agent. Generation is open to visitors. The one-click button deploys a separate agent into each user’s OpenComputer account.
 
 ## Example requests
 
